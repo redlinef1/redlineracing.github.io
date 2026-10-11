@@ -609,6 +609,13 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
 }
 
 /* Session-specific weather forecast in Race Centre */
+/* Weather is an integrated part of the Weekend Status card */
+.briefing-weather-inline{margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.briefing-weather-inline:empty{display:none}
+.briefing-weather-inline .briefing-weather-head{margin-bottom:10px}
+.briefing-weather-inline .briefing-weather-head .briefing-lead{font-size:13px;margin-bottom:2px}
+.briefing-weather-inline .briefing-weather-updated{font-size:10px}
+.briefing-weather-inline .briefing-weather-foot{margin-top:9px}
 .briefing-weather-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
 .briefing-weather-track{font-size:12px;color:var(--mute);margin-top:3px}
 .briefing-weather-updated{font-size:10px;color:var(--mute);text-align:right;white-space:nowrap}
@@ -680,8 +687,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
   </div>
   <p class="briefing-note" id="briefingNote" role="status" aria-live="polite">Loading the latest available session schedule…</p>
   <div class="briefing-grid">
-   <section class="briefing-card briefing-wide"><p class="briefing-kicker">THE SITUATION</p><h3>Weekend status</h3><div id="briefingSummary" class="briefing-content"><div class="state">Checking the schedule…</div></div></section>
-   <section class="briefing-card briefing-wide" id="briefingWeatherCard"><p class="briefing-kicker">TRACK CONDITIONS / OPEN-METEO</p><h3>Weekend weather</h3><div id="briefingWeather" class="briefing-content"><div class="state">Loading circuit forecast…</div></div></section>
+   <section class="briefing-card briefing-wide"><p class="briefing-kicker">THE SITUATION</p><h3>Weekend status</h3><div id="briefingSummary" class="briefing-content"><div class="state">Checking the schedule…</div></div><div id="briefingWeather" class="briefing-content briefing-weather-inline"><div class="state">Loading session weather…</div></div></section>
    <section class="briefing-card briefing-wide briefing-priority"><p class="briefing-kicker">RACE REPORT</p><h3>Latest Race Recap</h3><div id="briefingRecap" class="briefing-content"><div class="state">Loading the latest verified race result…</div></div></section>
    <div class="briefing-feature-grid">
     <section class="briefing-card"><p class="briefing-kicker">SESSION SPOTLIGHT</p><h3>Latest session</h3><div id="briefingSpotlight" class="briefing-content"><div class="state">Finding the latest completed session…</div></div></section>
