@@ -976,12 +976,8 @@ async function loadBriefingFeatures(force=false){
     const all=await get("/sessions?year="+nowY);
     const now=Date.now(),done=all.filter(x=>x.session_key&&x.date_end&&new Date(x.date_end).getTime()<=now&&!x.is_cancelled).sort((a,b)=>new Date(b.date_end)-new Date(a.date_end));
     if(!done.length){spotlight.innerHTML='<p class="briefing-lead">No completed session yet</p><p>Once a session finishes and classification data is published, its leaders will appear here.</p>';return}
-    let session=null,results=[],drivers=[];
-    for(const candidate of done.slice(0,8)){
-     try{const rows=await get("/session_result?session_key="+encodeURIComponent(candidate.session_key));if(rows.length){session=candidate;results=rows.sort((a,b)=>(a.position??999)-(b.position??999));break}}catch(e){}
-     if(!session)session=candidate;
-    }
-    if(!session){spotlight.innerHTML='<p class="briefing-lead">Session data unavailable</p><p>Try refreshing after the next session.</p>';return}
+    const session=done[0];let results=[],drivers=[];
+    try{results=(await get("/session_result?session_key="+encodeURIComponent(session.session_key))).sort((a,b)=>(a.position??999)-(b.position??999))}catch(e){}
     try{drivers=await get("/drivers?session_key="+encodeURIComponent(session.session_key))}catch(e){}
     const by=Object.fromEntries(drivers.map(d=>[String(d.driver_number),d]));
     if(!results.length){
