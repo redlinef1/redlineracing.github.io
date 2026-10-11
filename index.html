@@ -1748,17 +1748,30 @@ async function refreshAlternateLive(){
 async function startLive(){
  stopLive();
  const previous=L;
- if(!Object.keys(L.pos||{}).length)$("liveList").innerHTML='<div class="state">Finding the latest session…';
+ if(!Object.keys(L.pos||{}).length)$("liveList").innerHTML='<div class="state">Finding the latest session…</div>';
  try{
-  const ss=await fresh("/sessions?session_key=latest");const s=ss[0];if(!s)throw new Error("No session found");
-  const now=Date.now(),on=new Date(s.date_start)<=now&&now<=new Date(s.date_end);
-  const ref=on?now:new Date(s.date_end).getTime();
-  const old=L;
-  L={...old,k:s.session_key,s,on,pos:{},gap:{},since:null,by:{},source:"openf1"};
+  const now=Date.now();
+  // "latest" can point at a completed session even while a newer session is underway.
+  // Check the full current-season schedule first so an active session takes priority.
+  let schedule=[];
+  try{schedule=await fresh("/sessions?year="+nowY)}catch(e){}
+  const active=schedule.filter(x=>x.session_key&&x.date_start&&x.date_end&&!x.is_cancelled)
+   .filter(x=>new Date(x.date_start).getTime()<=now&&now<new Date(x.date_end).getTime())
+   .sort((a,b)=>new Date(b.date_start)-new Date(a.date_start))[0];
+  let s=active;
+  if(!s){
+   const ss=await fresh("/sessions?session_key=latest");
+   s=ss.find(x=>x.session_key)||null;
+  }
+  if(!s)throw new Error("No session found");
+  const start=Date.parse(s.date_start),end=Date.parse(s.date_end);
+  const on=Number.isFinite(start)&&Number.isFinite(end)&&start<=now&&now<end;
+  const ref=on?now:(Number.isFinite(end)?end:now);
+  L={...previous,k:s.session_key,s,on,pos:{},gap:{},since:null,by:{},source:"openf1"};
   const [drv,pos]=await Promise.all([get(`/drivers?session_key=${L.k}`),fresh(`/position?session_key=${L.k}`)]);
   L.by=Object.fromEntries(drv.map(x=>[x.driver_number,x]));mergeLive(pos);
   try{mergeGaps(await fresh(`/intervals?session_key=${L.k}&date>${encodeURIComponent(iso(ref-180000))}`))}catch(e){}
-  L.updatedAt=Date.now();drawLive();if(on)liveTimer=setInterval(livePoll,10000);
+  L.updatedAt=Date.now();drawLive();liveTimer=setInterval(livePoll,on?10000:30000);
  }catch(e){
   L=previous;
   try{await refreshAlternateLive();liveTimer=setInterval(livePoll,15000)}
