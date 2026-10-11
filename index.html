@@ -1038,14 +1038,14 @@ async function loadBriefingRecap(force=false){
   const now=Date.now();
   const races=sessions.filter(s=>String(s.session_name||"").toLowerCase()==="race"&&!s.is_cancelled&&s.date_start&&s.date_end&&new Date(s.date_end).getTime()<=now&&s.session_key).sort((a,b)=>new Date(b.date_start)-new Date(a.date_start));
   if(!races.length)throw new Error("No completed Grand Prix session found");
-  let race=null,res=[],drivers=[];
-  for(const candidate of races){
-   try{
-    const results=await liveJson("/session_result?session_key="+encodeURIComponent(candidate.session_key));
-    if(results.length){race=candidate;res=results.sort((a,b)=>(a.position??999)-(b.position??999));break}
-   }catch(e){}
-  }
-  if(!race||!res.length)throw new Error("Latest Grand Prix classification is not available yet");
+  // Only recap the newest completed Grand Prix. Never fall back to an older race,
+  // because that makes the headline appear to change as the provider publishes data.
+  const race=races[0];
+  let res=[],drivers=[];
+  try{res=await liveJson("/session_result?session_key="+encodeURIComponent(race.session_key))}catch(e){}
+  res=res.filter(v=>v&&v.position!==null&&v.position!==undefined&&Number.isFinite(Number(v.position)))
+       .sort((a,b)=>Number(a.position)-Number(b.position));
+  if(!res.length||!res.some(v=>Number(v.position)===1))throw new Error("Latest Grand Prix classification is not available yet");
   try{drivers=await liveJson("/drivers?session_key="+encodeURIComponent(race.session_key))}catch(e){}
   const byNo=Object.fromEntries(drivers.map(d=>[String(d.driver_number),d]));
   const driverName=v=>{const d=byNo[String(v.driver_number)]||{};return d.full_name||[d.first_name,d.last_name].filter(Boolean).join(" ")||("Driver #"+v.driver_number)};
