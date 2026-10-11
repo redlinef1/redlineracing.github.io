@@ -799,14 +799,17 @@ const hits=[];const setNet=t=>{const e=document.getElementById("net");if(e)e.tex
 async function throttle(){for(;;){const now=Date.now();while(hits.length&&now-hits[0]>60000)hits.shift();
  if(hits.length<26){hits.push(now);setNet("");return}
  setNet("Waiting a moment for OpenF1's free rate limit…");await sleep(hits[0]+60050-now)}}
-async function fetchRetry(p){for(let i=0;i<4;i++){await throttle();let r;try{r=await fetch(API+p)}catch(_){throw new Error("Can't reach OpenF1. Check your internet connection and try again.")}
-  if(r.status===429){await sleep(1500*(i+1));continue}
+async function fetchTimed(url,timeoutMs=9000){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);try{return await fetch(url,{signal:controller.signal,cache:"no-store"})}finally{clearTimeout(timer)}}
+async function fetchRetry(p){let lastError;for(let i=0;i<3;i++){await throttle();try{const r=await fetchTimed(API+p,9000);
+  if(r.status===429){lastError=new Error("OpenF1 rate limit (429)");await sleep(1200*(i+1));continue}
+  if(r.status>=500){lastError=new Error("OpenF1 returned "+r.status);if(i<2){await sleep(700*(i+1));continue}throw lastError}
   if(r.status===404)throw new Error("OpenF1 endpoint not found (404)");
   if(!r.ok)throw new Error("OpenF1 returned "+r.status);
   let j;try{j=await r.json()}catch(_){throw new Error("OpenF1 returned invalid JSON")}
   if(!Array.isArray(j))throw new Error("OpenF1 returned an unexpected data format");
-  if(p.startsWith("/drivers"))j.forEach(d=>{if(d.full_name)nameBook[d.driver_number]=d});return j}
- throw new Error("OpenF1 is busy, try again soon")}
+  if(p.startsWith("/drivers"))j.forEach(d=>{if(d.full_name)nameBook[d.driver_number]=d});return j
+ }catch(e){lastError=e;if(i<2){await sleep(700*(i+1));continue}}}
+ throw new Error(lastError?.name==="AbortError"?"OpenF1 timed out after retries. Try again shortly.":lastError?.message||"OpenF1 is busy, try again soon")}
 // Durable browser archive: keeps successful API responses across reloads and API outages.
 const ARCHIVE_DB="redline-archive-v1";
 let archiveDbPromise;
@@ -1259,6 +1262,8 @@ function renderBriefing(){
  loadBriefingFeatures();
 }
 // Open-Meteo non-commercial forecast: locate the circuit, then sample hourly weather at each session start.
+// Bound request time and retry temporary network, rate-limit, and server errors.
+async function fetchWeatherRetry(url){let lastError;for(let i=0;i<2;i++){try{const response=await fetchTimed(url,8000);if(response.ok)return response;if(response.status===429||response.status>=500){lastError=new Error("Weather API returned HTTP "+response.status);if(i===0){await sleep(500);continue}}return response}catch(e){lastError=e;if(i===0)await sleep(500)}}throw new Error(lastError?.name==="AbortError"?"Weather API timed out. Please retry shortly.":lastError?.message||"Weather API unavailable")}
 const briefingWeatherCache=new Map();
 function briefingWeatherCode(code){
  const c=Number(code);
@@ -1296,7 +1301,7 @@ async function loadWeekendForecast(meeting){
   for(const query of geoQueries){
    try{
     const geoUrl="https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(query)+"&count=10&language=en&format=json";
-    const geoResponse=await fetch(geoUrl);
+    const geoResponse=await fetchWeatherRetry(geoUrl);
     if(!geoResponse.ok)throw new Error("Circuit geocoding returned HTTP "+geoResponse.status);
     const geo=await geoResponse.json(),results=geo.results||[];
     const match=results.find(x=>String(x.country||"").toLowerCase()===country);
@@ -1324,8 +1329,8 @@ async function loadWeekendForecast(meeting){
   }
   sessions=sessions.sort((a,b)=>new Date(a.date_start)-new Date(b.date_start));
   const url="https://api.open-meteo.com/v1/forecast?latitude="+encodeURIComponent(place.latitude)+"&longitude="+encodeURIComponent(place.longitude)+"&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m&temperature_unit=celsius&wind_speed_unit=kmh&precipitation_unit=mm&timezone=UTC&forecast_days=16";
-  const response=await fetch(url);
-  if(!response.ok)throw new Error("Forecast provider is temporarily unavailable");
+  const response=await fetchWeatherRetry(url);
+  if(!response.ok)throw new Error("Forecast provider returned HTTP "+response.status);
   const forecast=await response.json(),hourly=forecast.hourly||{},times=hourly.time||[];
   if(!times.length)throw new Error("No hourly forecast data returned");
   const now=Date.now(),end=now+16*24*60*60*1000;
