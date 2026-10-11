@@ -502,6 +502,22 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
 @media(max-width:650px){.briefing-feature-grid{grid-template-columns:1fr;grid-column:auto}.briefing-head{align-items:stretch;flex-direction:column;padding:18px 14px 14px;gap:13px}.briefing-refresh{align-self:flex-start}.briefing-note{padding:10px 14px}.briefing-grid{grid-template-columns:1fr;padding:10px}.briefing-wide{grid-column:auto}.briefing-card{padding:13px}.briefing-footer{flex-direction:column;padding:15px 14px;gap:12px}.briefing-disclaimer{padding:0 14px 14px}.briefing-session{align-items:flex-start}.briefing-tag{margin-top:2px}}
 
 
+/* Mobile race ledger scrolling */
+.stats-ledger-scroll{position:relative;overscroll-behavior-x:contain;scrollbar-width:thin}
+.stats-ledger{width:max-content;min-width:100%;table-layout:auto}
+.stats-ledger th:first-child,.stats-ledger tbody th{min-width:125px}
+.stats-ledger thead th:not(:first-child),.stats-ledger td{min-width:64px}
+.stats-ledger td:last-child,.stats-ledger thead th:last-child{position:sticky;right:0;z-index:1;background:var(--panel);box-shadow:-7px 0 10px -9px var(--txt)}
+.stats-ledger thead th:last-child{z-index:3;background:var(--soft)}
+.stats-ledger tbody tr:nth-child(even) td:last-child{background:var(--panel)}
+@media(max-width:620px){
+ .stats-ledger-scroll{max-height:420px;overflow:auto;scroll-padding-inline:125px 68px}
+ .stats-ledger{font-size:12px}
+ .stats-ledger th,.stats-ledger td{padding:10px 11px}
+ .stats-ledger th:first-child,.stats-ledger tbody th{min-width:112px;max-width:112px;overflow:hidden;text-overflow:ellipsis}
+ .stats-ledger thead th:not(:first-child),.stats-ledger td{min-width:58px}
+ .stats-ledger td:last-child,.stats-ledger thead th:last-child{min-width:68px}
+}
 /* Season Trends layout refinement */
 .stats-trend-intro{align-items:center;padding:2px 0 12px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .stats-trend-intro>div:first-child{min-width:0;max-width:720px}
