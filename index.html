@@ -1364,8 +1364,17 @@ async function loadWeekendForecast(meeting){
 let briefingFeaturesBusy=false,briefingFeaturesLoaded="";
 // Use the site's bundled season archive for the circuit card first; don't make the card wait in OpenF1's shared request queue.
 async function archivedCircuitMeetings(y){
- const archive=await readStaticSeasonArchive(y);
- const races=archive.responses?.["/"+y+"/races/"]?.RaceTable?.Races||[];
+ let races=[];
+ // The Home circuit card needs only race dates and circuit metadata, not the full 600 KB season archive.
+ // Use the compact schedule when available; retain the full archive as a compatibility fallback.
+ try{
+  const response=await fetch("./archive/"+y+"-circuits.json",{cache:"force-cache"});
+  if(response.ok){const data=await response.json();if(Array.isArray(data.races))races=data.races}
+ }catch(e){}
+ if(!races.length){
+  const archive=await readStaticSeasonArchive(y);
+  races=archive.responses?.["/"+y+"/races/"]?.RaceTable?.Races||[];
+ }
  return races.map(r=>{
   const sessions=jolpicaSessionList(r),raceDate=jdate({date:r.date,time:r.time})||new Date(r.date+"T12:00:00Z");
   const first=sessions[0]?.date||raceDate,round=Number(r.round),key="jolpica-"+y+"-"+round;
