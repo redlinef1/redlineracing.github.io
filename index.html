@@ -205,6 +205,14 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
 .msg.event-green{border-left-color:#16a34a}.msg.event-green .flag{background:#16a34a;color:#fff}
 .msg.event-blue{border-left-color:#2a6df5}.msg.event-blue .flag{background:#2a6df5;color:#fff}
 .msg.event-neutral{border-left-color:var(--mute)}
+.control-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:11px 14px;border-bottom:1px solid var(--line)}
+.control-filters{display:flex;gap:6px;flex-wrap:wrap}
+.control-filters button,.control-order{border:1px solid var(--line);background:var(--card2);color:var(--mute);border-radius:999px;padding:7px 11px;font:600 11px Inter;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.control-filters button[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.control-order{white-space:nowrap;color:var(--txt)}
+.msg .msg-category{display:block;margin-top:4px;color:var(--mute);font-size:9px;line-height:1.2;text-transform:uppercase;letter-spacing:.06em}
+@media(max-width:480px){.control-tools{padding:10px;align-items:flex-start}.control-filters{gap:5px}.control-filters button,.control-order{font-size:10px;padding:7px 9px}.control-order{margin-left:auto}}
+
 .msg.event-yellow time,.msg.event-red time,.msg.event-green time,.msg.event-blue time{font-weight:700}
 @media(max-width:480px){.msg{margin:6px;padding:10px;grid-template-columns:56px minmax(0,1fr);gap:8px;font-size:12px}.msg time{font-size:11px}.msg .msg-meta{font-size:9px}}
 .state{padding:30px 18px;text-align:center;color:var(--mute)}
@@ -691,7 +699,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
 </section>
 <section class="panel pane" id="v-live" hidden><h2 id="liveTitle">Live positions</h2><div class="tools" id="liveBar"></div><div class="scroll" id="liveList"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-result" hidden><h2 id="resTitle">Race result</h2><div class="scroll" id="result"><div class="state">Loading…</div></div></section>
- <section class="panel pane" id="v-control" hidden><h2>Race control</h2><div class="scroll" id="control"><div class="state">Loading…</div></div></section>
+ <section class="panel pane" id="v-control" hidden><h2>Race control</h2><div class="control-tools" id="controlTools" aria-label="Filter race control messages"><div class="control-filters" role="group" aria-label="Message category"><button type="button" data-control-filter="all" aria-pressed="true">All</button><button type="button" data-control-filter="flags" aria-pressed="false">Flags</button><button type="button" data-control-filter="safety" aria-pressed="false">Safety Car</button><button type="button" data-control-filter="incidents" aria-pressed="false">Incidents</button><button type="button" data-control-filter="other" aria-pressed="false">Other</button></div><button type="button" class="control-order" id="controlOrder" aria-label="Change message order">Newest first ↓</button></div><div class="scroll" id="control"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-radio" hidden><h2>Team radio</h2><div class="tools"><select id="rsess" aria-label="Session"></select></div><div class="scroll" id="radioList"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-weather" hidden><h2>Weather</h2><div class="tools"><select id="wsess" aria-label="Session"></select></div><div id="weatherView"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-tele" hidden><h2>Telemetry</h2>
@@ -1002,25 +1010,49 @@ async function loadResult(){
   try{await useJolpicaForCurrentRace();if(!ok(t))return;await loadJolpicaResult()}catch(j){if(ok(t))fail("result",j)}
  }
 }
+let controlMessages=[],controlFilter="all",controlOrder="newest";
+function controlCategory(x){
+ const flag=String(x.flag||"").toLowerCase(),msg=String(x.message||"").toLowerCase();
+ if(x.flag||/\\bflag\\b|track clear|yellow sector/.test(msg))return "flags";
+ if(/safety car|virtual safety car|\\bvsc\\b|\\bfcy\\b|full course yellow/.test(msg))return "safety";
+ if(/incident|investigation|collision|contact|unsafe release|penalt|infringement|noted by the stewards|black and white flag/.test(msg))return "incidents";
+ return "other";
+}
+function controlEventStyle(x){
+ const flag=String(x.flag||"").toUpperCase(),msg=String(x.message||"").toLowerCase();
+ if(flag.includes("RED")||/red flag|session suspended|session stopped/.test(msg))return "event-red";
+ if(flag.includes("YELLOW")||flag==="DOUBLE"||/yellow flag|yellow sector/.test(msg))return "event-yellow";
+ if(flag.includes("GREEN")||flag==="CLEAR"||/green flag|track clear/.test(msg))return "event-green";
+ if(flag.includes("BLUE")||/blue flag/.test(msg))return "event-blue";
+ return "event-neutral";
+}
+function renderControlTimeline(){
+ const host=$("control");
+ if(!controlMessages.length){host.innerHTML='<div class="state">No messages recorded for this session.</div>';return}
+ const filtered=controlFilter==="all"?controlMessages:controlMessages.filter(x=>controlCategory(x)===controlFilter);
+ const ordered=controlOrder==="newest"?filtered:filtered.slice().reverse();
+ $("controlTools").querySelectorAll("[data-control-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.controlFilter===controlFilter)));
+ $("controlOrder").textContent=controlOrder==="newest"?"Newest first ↓":"Oldest first ↑";
+ if(!ordered.length){host.innerHTML='<div class="state">No messages match this filter.</div>';return}
+ host.innerHTML=ordered.map(x=>{
+  const date=new Date(x.date),time=Number.isNaN(date.getTime())?"--:--":date.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+  const flag=x.flag?String(x.flag).replace(/_/g," "):"Race Control";
+  const lap=x.lap_number!=null&&x.lap_number!==""?"Lap "+esc(x.lap_number):"Session message";
+  const category=controlCategory(x);
+  return `<article class="msg ${controlEventStyle(x)}"><div><time>${time}</time><span class="msg-meta">${lap}</span><span class="msg-category">${category==="safety"?"Safety Car":category==="incidents"?"Incident":category==="flags"?"Flag":"Other"}</span></div><div class="msg-body">${x.flag?`<span class="flag">${esc(flag)}</span>`:""}<span class="msg-text">${esc(x.message||"Race control message")}</span></div></article>`;
+ }).join("");
+}
+$("controlTools").addEventListener("click",e=>{
+ const filter=e.target.closest("[data-control-filter]");
+ if(filter){controlFilter=filter.dataset.controlFilter;renderControlTimeline();return}
+ if(e.target.closest("#controlOrder")){controlOrder=controlOrder==="newest"?"oldest":"newest";renderControlTimeline()}
+});
 async function loadControl(){
  if(cur?._source==="jolpica"){$("control").innerHTML=noJolpicaLive;return}
  const t=tok;
  try{
   const m=(await get(`/race_control?session_key=${cur.session_key}`)).sort((a,b)=>new Date(b.date)-new Date(a.date));if(!ok(t))return;
-  const eventStyle=x=>{
-   const flag=String(x.flag||"").toUpperCase(),msg=String(x.message||"").toLowerCase();
-   if(flag.includes("RED")||/red flag|session suspended|session stopped/.test(msg))return "event-red";
-   if(flag.includes("YELLOW")||flag==="DOUBLE"||/yellow flag|yellow sector/.test(msg))return "event-yellow";
-   if(flag.includes("GREEN")||flag==="CLEAR"||/green flag|track clear/.test(msg))return "event-green";
-   if(flag.includes("BLUE")||/blue flag/.test(msg))return "event-blue";
-   return "event-neutral";
-  };
-  $("control").innerHTML=m.slice(0,80).map(x=>{
-   const date=new Date(x.date),time=Number.isNaN(date.getTime())?"--:--":date.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
-   const flag=x.flag?String(x.flag).replace(/_/g," "):"Race Control";
-   const lap=x.lap_number!=null&&x.lap_number!==""?"Lap "+esc(x.lap_number):"Session message";
-   return `<article class="msg ${eventStyle(x)}"><div><time>${time}</time><span class="msg-meta">${lap}</span></div><div class="msg-body">${x.flag?`<span class="flag">${esc(flag)}</span>`:""}<span class="msg-text">${esc(x.message||"Race control message")}</span></div></article>`;
-  }).join("")||'<div class="state">No messages recorded for this session.</div>';
+  controlMessages=m.slice(0,80);controlFilter="all";controlOrder="newest";renderControlTimeline();
  }catch(e){ok(t)&&fail("control",e)}
 }
 
