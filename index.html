@@ -1222,6 +1222,7 @@ function renderBriefing(){
  loadBriefingRecap();
  const now=Date.now(),sessions=(countdownSessions||[]).filter(s=>Number.isFinite(s.start)&&Number.isFinite(s.end)).sort((a,b)=>a.start-b.start);
  const active=sessions.find(s=>s.start<=now&&s.end>now);
+ renderBriefingRecapSessionStatus();
  const upcoming=sessions.filter(s=>s.start>now);
  const completed=sessions.filter(s=>s.end<=now).sort((a,b)=>b.end-a.end);
  if(!sessions.length){
@@ -1369,7 +1370,17 @@ async function loadBriefingFeatures(force=false){
   document.querySelectorAll("[data-hub-tab]").forEach(b=>b.onclick=()=>show(b.dataset.hubTab));
  }finally{briefingFeaturesBusy=false}
 }
-let briefingRecapKey="",briefingRecapBusy=false;
+let briefingRecapKey="",briefingRecapBusy=false,briefingRecapBaseHtml="";
+function renderBriefingRecapSessionStatus(){
+ const box=$("briefingRecap");if(!box)return;
+ const now=Date.now(),sessions=(countdownSessions||[]).filter(s=>Number.isFinite(s.start)&&Number.isFinite(s.end));
+ const active=sessions.find(s=>s.start<=now&&now<s.end);
+ if(active){
+  box.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>SESSION IN PROGRESS</span></div><p class="briefing-lead">'+esc(sessionLabel(active))+'</p><p>'+esc(active.race||"Grand Prix")+' is currently scheduled to be on track. The latest race recap will return when this session ends.</p>';
+ }else if(briefingRecapBaseHtml){
+  box.innerHTML=briefingRecapBaseHtml;
+ }
+}
 async function loadBriefingRecap(force=false){
  const box=$("briefingRecap");if(!box||briefingRecapBusy)return;
  const y=nowY;
@@ -1404,11 +1415,11 @@ async function loadBriefingRecap(force=false){
   const verdict=gap
    ?driverName(winner)+" takes the win"+(team?" for "+team:"")+", beating "+driverName(second)+" by "+gap.replace(/^\+/,"")+". The official result gives us the winning margin."
    :driverName(winner)+" takes P1"+(team?" for "+team:"")+" in the "+gp+". The published result does not provide a clear time gap to P2, so Redline won't label the win dominant or close without evidence.";
-  box.innerHTML='<div class="briefing-recap-top"><div><div class="briefing-statusline"><span class="briefing-live-dot"></span><span>RESULT AVAILABLE</span></div><p class="briefing-lead">'+esc(gp)+'</p><p>'+date.toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})+' · Winner: <strong>'+esc(driverName(winner))+'</strong>'+(team?" · "+esc(team):"")+'</p></div><span class="briefing-recap-points">'+(winner.points?esc(winner.points)+" pts":"")+'</span></div><div class="briefing-verdict"><p class="briefing-verdict-kicker">THE VERDICT</p><p class="briefing-recap-summary">'+esc(verdict)+'</p></div><p class="briefing-podium-label">PODIUM</p><div class="briefing-podium">'+podiumLine+'</div><p class="briefing-recap-foot">Based on the Jolpica-F1 race-results feed. The recap only appears when the newest completed Grand Prix has a published classification.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">View official F1 results ↗</a>';
-  box.dataset.loaded="true";
+  briefingRecapBaseHtml='<div class="briefing-recap-top"><div><div class="briefing-statusline"><span class="briefing-live-dot"></span><span>RESULT AVAILABLE</span></div><p class="briefing-lead">'+esc(gp)+'</p><p>'+date.toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})+' · Winner: <strong>'+esc(driverName(winner))+'</strong>'+(team?" · "+esc(team):"")+'</p></div><span class="briefing-recap-points">'+(winner.points?esc(winner.points)+" pts":"")+'</span></div><div class="briefing-verdict"><p class="briefing-verdict-kicker">THE VERDICT</p><p class="briefing-recap-summary">'+esc(verdict)+'</p></div><p class="briefing-podium-label">PODIUM</p><div class="briefing-podium">'+podiumLine+'</div><p class="briefing-recap-foot">Based on the Jolpica-F1 race-results feed. The recap only appears when the newest completed Grand Prix has a published classification.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">View official F1 results ↗</a>';
+  box.dataset.loaded="true";renderBriefingRecapSessionStatus();
  }catch(e){
-  box.innerHTML='<p class="briefing-lead">Latest Grand Prix results could not be verified.</p><p>Redline could not confirm the newest completed Grand Prix classification, so it will not show an older race as if it were current. Refresh in a moment or check the official results page.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">Check official F1 results ↗</a>';
-  box.dataset.loaded="true";
+  briefingRecapBaseHtml='<p class="briefing-lead">Latest Grand Prix results could not be verified.</p><p>Redline could not confirm the newest completed Grand Prix classification, so it will not show an older race as if it were current. Refresh in a moment or check the official results page.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">Check official F1 results ↗</a>';
+  box.dataset.loaded="true";renderBriefingRecapSessionStatus();
  }finally{briefingRecapBusy=false}
 }
 const briefingRefresh=$("briefingRefresh");
@@ -1915,6 +1926,8 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 }
 
 loadYear(nowY);renderBriefing();
+// Keep the recap's live-session notice in sync with session start/end times.
+setInterval(renderBriefingRecapSessionStatus,15000);
 </script>
 </body>
 </html>
