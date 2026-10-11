@@ -1260,8 +1260,8 @@ async function loadBriefingFeatures(force=false){
     const meeting=ordered.find(m=>new Date(m.date_end||m.date_start).getTime()>=now)||ordered[ordered.length-1];
     const next=meeting.date_start&&new Date(meeting.date_start).getTime()>now;
     loadWeekendForecast(meeting);
-    circuit.innerHTML='<p class="briefing-recap-foot">'+(next?'Next scheduled venue':'Most recent venue')+' · '+esc(meeting.meeting_name||"Grand Prix")+'</p>'+circuitGuideHTML(meeting)+'<button type="button" class="briefing-result-link" data-hub-tab="cal">Explore race calendar →</button>';
-    circuit.innerHTML=circuit.innerHTML+circuitStoryHTML(meeting);loadCircuitStory(meeting);
+    circuit.innerHTML='<p class="briefing-recap-foot">'+(next?'Next scheduled venue':'Most recent venue')+' · '+esc(meeting.meeting_name||"Grand Prix")+'</p>'+circuitGuideHTML(meeting)+circuitStoryHTML(meeting)+'<button type="button" class="briefing-result-link" data-hub-tab="cal">Explore race calendar →</button>';
+    loadCircuitStory(meeting);
    }catch(e){circuit.innerHTML='<p class="briefing-lead">Circuit guide unavailable</p><p>Track details will appear when the season calendar can be loaded.</p><button type="button" class="briefing-result-link" data-hub-tab="cal">Open calendar →</button>'}
   })();
   await Promise.all([sessionTask,champTask,circuitTask]);
