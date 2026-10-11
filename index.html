@@ -230,6 +230,11 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
 .control-order{white-space:nowrap;color:var(--txt)}
 .msg .msg-category{display:block;margin-top:4px;color:var(--mute);font-size:9px;line-height:1.2;text-transform:uppercase;letter-spacing:.06em}
 @media(max-width:480px){.control-tools{padding:10px;align-items:flex-start}.control-filters{gap:5px}.control-filters button,.control-order{font-size:10px;padding:7px 9px}.control-order{margin-left:auto}}
+/* Keep the filter group and sort control on a consistent alignment grid. */
+.control-tools{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:8px}
+.control-filters{min-width:0;align-items:center}
+.control-order{align-self:center;justify-self:end;margin-left:0}
+@media(max-width:560px){.control-tools{grid-template-columns:minmax(0,1fr);align-items:stretch}.control-filters{width:100%}.control-order{justify-self:end;align-self:center;margin:0}}
 
 .msg.event-yellow time,.msg.event-red time,.msg.event-green time,.msg.event-blue time{font-weight:700}
 @media(max-width:480px){.msg{margin:6px;padding:10px;grid-template-columns:56px minmax(0,1fr);gap:8px;font-size:12px}.msg time{font-size:11px}.msg .msg-meta{font-size:9px}}
