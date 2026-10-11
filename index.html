@@ -147,15 +147,15 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
 .stats-trend{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:var(--soft);margin-top:10px}
 .stats-note{font-size:11px;color:var(--mute);margin-top:10px;line-height:1.5}
 .stats-record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.stats-record{position:relative;min-width:0;padding:15px;border:1px solid var(--line);border-radius:12px;background:var(--soft);overflow:hidden}
+.stats-record{position:relative;display:flex;flex-direction:column;min-width:0;padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--soft);overflow:hidden}
 .stats-record::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red);opacity:.9}
-.stats-record-label{font:600 10px Inter;letter-spacing:.11em;text-transform:uppercase;color:var(--mute)}
-.stats-record-value{font:700 clamp(23px,3vw,31px)/1.1 "IBM Plex Mono",monospace;letter-spacing:-.04em;margin:12px 0 7px;color:var(--txt);overflow-wrap:anywhere}
+.stats-record-label{font:600 10px Inter;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);min-height:13px}
+.stats-record-value{font:700 clamp(23px,3vw,31px)/1.1 "IBM Plex Mono",monospace;letter-spacing:-.04em;margin:9px 0 6px;color:var(--txt);overflow-wrap:anywhere}
 .stats-record-leader{font-size:13px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
 .stats-record-team{font-size:11px;color:var(--mute);margin-top:4px;line-height:1.4}
-.stats-record-foot{font-size:10px;color:var(--mute);margin-top:12px;padding-top:9px;border-top:1px solid var(--line)}
-.stats-record-ranking{display:grid;gap:9px;margin-top:13px}
-.stats-record-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:7px;align-items:center;font-size:11px}
+.stats-record-foot{font-size:10px;color:var(--mute);margin-top:10px;padding-top:8px;border-top:1px solid var(--line);line-height:1.4}
+.stats-record-ranking{display:grid;gap:7px;margin-top:10px;flex:1}
+.stats-record-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:6px;align-items:center;font-size:11px}
 .stats-record-rank{color:var(--mute);font:500 10px "IBM Plex Mono",monospace}
 .stats-record-driver{font-weight:600;min-width:0;overflow-wrap:anywhere;line-height:1.3}
 .stats-record-stat{font:600 11px "IBM Plex Mono",monospace;white-space:nowrap}
@@ -1428,9 +1428,9 @@ function renderDriverStats(){
   html+=`<div class="stats-pair">${statsDriverCard(a,"a",b.id)}${statsDriverCard(b,"b",a.id)}</div><div class="stats-verdict"><div class="sv-kicker">▰ &nbsp; THE EDITORIAL VERDICT</div><h3>${statsEsc(summary.headline)}</h3><p>${statsEsc(summary.paragraph)}</p><div class="stats-meta"><span>◉ &nbsp; ${statsState.offline?"OFFLINE CACHE":data.hasRaces&&data.hasQualifying?"Race & qualifying data loaded":data.hasRaces?"Race data loaded":"Standings data available"} </span><span>${statsState.offline?"Last saved ":"Saved "}${statsEsc(stamp)}</span></div></div><div class="stats-lower"><div><h3 class="stats-section-title">The numbers behind the verdict</h3>${statsMetric("Championship points","points",a,b)}${statsMetric("Race wins","wins",a,b)}${statsMetric("Podiums","podiums",a,b)}${statsMetric("Pole positions","poles",a,b)}${statsMetric("Fastest laps","fastest",a,b)}${statsMetric("Average qualifying position","avgQual",a,b,true)}${statsMetric("Average finishing position","avgFinish",a,b,true)}</div><aside class="stats-side"><h3>At a glance</h3><div class="stats-takeaway"><span>↗</span><span><b>${statsEsc(a.name)}</b> — ${a.points!=null&&b.points!=null?(a.points===b.points?"level on points":a.points>b.points?"championship points advantage":"trails on championship points"):"points data unavailable"}</span></div><div class="stats-takeaway"><span>↗</span><span><b>${statsEsc(b.name)}</b> — ${b.fastest!=null&&a.fastest!=null&&b.fastest>a.fastest?"more fastest laps":b.wins!=null&&a.wins!=null&&b.wins>a.wins?"more race wins":"comparison depends on the selected metrics"}</span></div><div class="stats-takeaway"><span>◎</span><span>Missing statistics are shown as dashes, not zero.</span></div></aside></div><p class="stats-note">Summary is generated from recorded statistics only. Average qualifying and finishing positions are lower-is-better. Historical and cached data may be incomplete.</p>`;
  }else if(statsState.view==="overview"){
   html+='<h3 class="stats-section-title">Season Record Book</h3><p class="stats-note" style="margin:0 0 14px">A neutral look at the season’s leading performances. Each category shows the top three recorded results, with ties included.</p><div class="stats-record-grid">'+[
-   ["Race wins","wins","wins",false],
-   ["Podium finishes","podiums","podiums",false],
-   ["Pole positions","poles","poles",false],
+   ["Wins","wins","wins",false],
+   ["Podiums","podiums","podiums",false],
+   ["Poles","poles","poles",false],
    ["Fastest laps","fastest","fastest laps",false],
    ["Avg. qualifying","avgQual","average grid position",true],
    ["Avg. finish","avgFinish","average finishing position",true]
