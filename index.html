@@ -518,6 +518,59 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
  .stats-points-value{font-size:11px}
  .stats-points-count{font-size:8px;padding:6px}
 }
+/* Qualifying vs race performance analytics */
+.stats-performance{margin-top:18px;padding:15px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.stats-performance-heading{margin-top:26px;padding-top:16px;border-top:1px solid var(--line)}
+.stats-performance-heading .stats-section-title{margin:5px 0}
+.stats-qf-legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:10px 0 14px}
+.stats-qf-legend span{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--mute)}
+.stats-qf-legend i{display:inline-block;width:8px;height:8px;border-radius:50%}
+.stats-qf-row{display:grid;grid-template-columns:minmax(100px,150px) minmax(200px,1fr) 52px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.stats-qf-row:last-child{border-bottom:0}
+.stats-qf-name{min-width:0;font-size:12px;font-weight:650;overflow-wrap:anywhere}
+.stats-qf-name small,.stats-gain-driver small,.stats-drive-round small{display:block;margin-top:3px;color:var(--mute);font-size:9px;font-weight:400}
+.stats-qf-bars{display:grid;gap:7px}
+.stats-qf-line{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;gap:7px;align-items:center}
+.stats-qf-line>span{font-size:9px;color:var(--mute);letter-spacing:.04em}
+.stats-qf-line>b{font:600 10px "IBM Plex Mono",monospace;text-align:right}
+.stats-qf-track{height:7px;border-radius:20px;background:var(--line);overflow:hidden}
+.stats-qf-track i{display:block;height:100%;border-radius:20px}
+.stats-qf-delta{font:700 12px "IBM Plex Mono",monospace;text-align:right}
+.stats-qf-delta.gain,.stats-gain-row b.gain,.stats-drive-row b.gain{color:#19A58C}
+.stats-qf-delta.loss,.stats-gain-row b.loss,.stats-drive-row b.loss{color:#FF6B5B}
+.stats-gain-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.stats-gain-row:last-child{border-bottom:0}
+.stats-gain-rank{font:500 10px "IBM Plex Mono",monospace;color:var(--mute)}
+.stats-gain-driver{font-size:12px;font-weight:650;min-width:0;overflow-wrap:anywhere}
+.stats-gain-row>b{font:700 14px "IBM Plex Mono",monospace;text-align:right;white-space:nowrap}
+.stats-gain-row>b small{font:500 9px Inter;color:var(--mute)}
+.stats-gain-record{grid-column:2/4;display:flex;gap:12px;font-size:10px;color:var(--mute)}
+.stats-recovery-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+.stats-analysis-panel{min-width:0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.stats-analysis-panel h4{margin:0;font-size:13px}
+.stats-drive-row{display:grid;grid-template-columns:minmax(74px,1fr) minmax(70px,1fr) auto 30px;gap:7px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:10px}
+.stats-drive-row:last-child{border-bottom:0}
+.stats-drive-round{font:600 10px "IBM Plex Mono",monospace}
+.stats-drive-driver{min-width:0;font-weight:600;overflow-wrap:anywhere}
+.stats-drive-positions{font:500 9px "IBM Plex Mono",monospace;color:var(--mute);white-space:nowrap}
+.stats-drive-row>b{font:700 12px "IBM Plex Mono",monospace;text-align:right}
+@media(max-width:700px){
+ .stats-performance{padding:12px}
+ .stats-qf-row{grid-template-columns:minmax(82px,105px) minmax(0,1fr) 38px;gap:7px}
+ .stats-qf-line{grid-template-columns:39px minmax(0,1fr) 40px;gap:5px}
+ .stats-qf-line>span{font-size:8px}
+ .stats-qf-line>b{font-size:9px}
+ .stats-recovery-grid{grid-template-columns:1fr}
+ .stats-drive-row{grid-template-columns:74px minmax(0,1fr) auto 28px}
+ .stats-gain-record{gap:9px}
+}
+@media(max-width:380px){
+ .stats-qf-row{grid-template-columns:78px minmax(0,1fr) 32px;gap:5px}
+ .stats-qf-name{font-size:10px}
+ .stats-qf-line{grid-template-columns:34px minmax(0,1fr) 35px;gap:4px}
+ .stats-drive-row{grid-template-columns:62px minmax(0,1fr) auto 25px;gap:5px}
+ .stats-drive-positions{font-size:8px}
+}
 /* Season Trends layout refinement */
 .stats-trend-intro{align-items:center;padding:2px 0 12px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .stats-trend-intro>div:first-child{min-width:0;max-width:720px}
@@ -1441,18 +1494,18 @@ function statsMerge(year,standingData,raceData,qualData,prior){
  const by={};(prior?.drivers||[]).forEach(d=>{by[d.id]={...d}});
  const standings=standingData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings||[];
  standings.forEach((v,i)=>{const id=statsDriverId(v);if(!id)return;const d=by[id]||{id};d.name=statsName(v);d.code=v.Driver?.code||"";d.number=v.Driver?.permanentNumber||"";d.team=statsTeam(v);d.points=statsNum(v.points);d.wins=statsNum(v.wins);d.position=statsNum(v.position)||i+1;d.championshipAvailable=true;by[id]=d});
- Object.values(by).forEach(d=>{d.podiums=0;d.poles=0;d.fastest=0;d.retirements=0;d.finishSum=0;d.finishCount=0;d.roundPoints={}});
+ Object.values(by).forEach(d=>{d.podiums=0;d.poles=0;d.fastest=0;d.retirements=0;d.finishSum=0;d.finishCount=0;d.roundPoints={};d.roundResults={};d.roundQualifying={}});
  const seasonRaces=(raceData?.RaceTable?.Races||[]).map(r=>({round:Number(r.round),name:r.raceName||("Round "+r.round),circuit:r.Circuit?.circuitName||""})).sort((a,b)=>a.round-b.round);
  if(raceData){
   const races=raceData.RaceTable?.Races||[];
-  races.forEach(r=>{(r.Results||[]).forEach(v=>{const id=statsDriverId(v);if(!by[id])by[id]={id,name:statsName(v),team:statsTeam(v),points:null,wins:null,position:null,podiums:0,poles:0,fastest:0,retirements:0,finishSum:0,finishCount:0,roundPoints:{}};const d=by[id],pos=statsNum(v.position),status=String(v.status||"").trim().toLowerCase(),classified=/^finished$|^\+\d+\s+laps?$/.test(status),excluded=/disqualif|did not start|did not qualify|withdraw|excluded|107% rule/.test(status);if(status&&!classified&&!excluded)d.retirements=(d.retirements||0)+1;if(pos&&pos<=3)d.podiums++;if(pos){d.finishSum+=pos;d.finishCount++}const round=Number(r.round);d.roundPoints[round]=(d.roundPoints[round]||0)+(statsNum(v.points)||0);if(v.FastestLap?.rank==="1"||Number(v.FastestLap?.rank)===1)d.fastest++})});
+  races.forEach(r=>{(r.Results||[]).forEach(v=>{const id=statsDriverId(v);if(!by[id])by[id]={id,name:statsName(v),team:statsTeam(v),points:null,wins:null,position:null,podiums:0,poles:0,fastest:0,retirements:0,finishSum:0,finishCount:0,roundPoints:{},roundResults:{},roundQualifying:{}};const d=by[id],pos=statsNum(v.position),status=String(v.status||"").trim().toLowerCase(),classified=/^finished$|^\+\d+\s+laps?$/.test(status),excluded=/disqualif|did not start|did not qualify|withdraw|excluded|107% rule/.test(status);if(status&&!classified&&!excluded)d.retirements=(d.retirements||0)+1;if(pos&&pos<=3)d.podiums++;if(pos){d.finishSum+=pos;d.finishCount++}const round=Number(r.round);d.roundPoints[round]=(d.roundPoints[round]||0)+(statsNum(v.points)||0);d.roundResults[round]={position:pos&&(!status||classified)?pos:null,status:String(v.status||"")};if(v.FastestLap?.rank==="1"||Number(v.FastestLap?.rank)===1)d.fastest++})});
  }
  if(qualData){
   const races=qualData.RaceTable?.Races||[];
-  races.forEach(r=>(r.QualifyingResults||[]).forEach(v=>{const id=statsDriverId(v);if(!by[id])by[id]={id,name:statsName(v),team:statsTeam(v),points:null,wins:null,podiums:0,poles:0,fastest:0,finishSum:0,finishCount:0,roundPoints:{}};const d=by[id],pos=statsNum(v.position);if(pos===1)d.poles=(d.poles||0)+1;if(pos){d.qualSum=(d.qualSum||0)+pos;d.qualCount=(d.qualCount||0)+1}}));
+  races.forEach(r=>(r.QualifyingResults||[]).forEach(v=>{const id=statsDriverId(v);if(!by[id])by[id]={id,name:statsName(v),team:statsTeam(v),points:null,wins:null,podiums:0,poles:0,fastest:0,finishSum:0,finishCount:0,roundPoints:{}};const d=by[id],pos=statsNum(v.position);if(pos===1)d.poles=(d.poles||0)+1;if(pos){d.qualSum=(d.qualSum||0)+pos;d.qualCount=(d.qualCount||0)+1;d.roundQualifying[Number(r.round)]=pos}}));
  }
  const drivers=Object.values(by).sort((a,b)=>(a.position||999)-(b.position||999));
- drivers.forEach(d=>{d.avgFinish=d.finishCount?Math.round(d.finishSum/d.finishCount*10)/10:null;d.avgQual=d.qualCount?Math.round(d.qualSum/d.qualCount*10)/10:null;d.podiums=Number.isFinite(d.podiums)?d.podiums:null;d.poles=Number.isFinite(d.poles)?d.poles:null;d.fastest=Number.isFinite(d.fastest)?d.fastest:null;d.roundPoints=d.roundPoints||{}});
+ drivers.forEach(d=>{d.avgFinish=d.finishCount?Math.round(d.finishSum/d.finishCount*10)/10:null;d.avgQual=d.qualCount?Math.round(d.qualSum/d.qualCount*10)/10:null;d.podiums=Number.isFinite(d.podiums)?d.podiums:null;d.poles=Number.isFinite(d.poles)?d.poles:null;d.fastest=Number.isFinite(d.fastest)?d.fastest:null;d.roundPoints=d.roundPoints||{};d.roundResults=d.roundResults||{};d.roundQualifying=d.roundQualifying||{}});
  return {year,updatedAt:Date.now(),source:"jolpica",drivers,rounds:seasonRaces,hasRaces:!!raceData,hasQualifying:!!qualData};
 }
 function statsMetric(label,key,a,b,lowerBetter=false){
@@ -1477,7 +1530,7 @@ function statsSummary(a,b){
 function statsTrendSVG(data){
  const drivers=[...data.drivers].sort((a,b)=>(a.position||999)-(b.position||999));
  const rounds=(data.rounds?.length?data.rounds:Array.from(new Set(drivers.flatMap(d=>Object.keys(d.roundPoints||{}).map(Number)))).sort((a,b)=>a-b).map(round=>({round,name:"Round "+round})));
- if(rounds.length<2)return '<div class="stats-empty">Season-wide progression will appear when at least two race results are available.</div>';
+ if(rounds.length<2)return '<div class="stats-empty">Season-wide analysis will appear when at least two race results are available.</div>';
  const palette=["#FF1E00","#3987E8","#19A58C","#B17AE0","#D9A441","#42A5B5","#D66B91","#87964B","#8A7DCE","#D18A45","#4D9C6B","#B95F5F","#6D8EC7","#9B7B62","#55A6A0","#A76FA0","#7E8A96","#C28C39","#5B85A8","#9B9B55"];
  const series=drivers.map((d,index)=>{let total=0;const values=rounds.map(r=>{total+=Number(d.roundPoints?.[r.round]||0);return total});return {d,values,color:palette[index%palette.length]}});
  const max=Math.max(1,...series.flatMap(x=>x.values)),w=Math.max(700,rounds.length*36),h=270,l=42,r=12,t=20,b=32,iw=w-l-r,ih=h-t-b;
@@ -1486,11 +1539,18 @@ function statsTrendSVG(data){
  const lines=series.map(z=>`<path d="${z.values.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ")}" stroke="${z.color}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity=".9"><title>${statsEsc(z.d.name)}: ${z.values[z.values.length-1]} points</title></path>`).join("");
  const ticks=rounds.map((round,i)=>i===0||i===rounds.length-1||i%Math.ceil(rounds.length/10)===0?`<text x="${x(i)}" y="${h-10}" text-anchor="middle" fill="currentColor" opacity=".7" font-size="10">R${round.round}</text>`:"").join("");
  const legend=series.map(z=>`<span><i style="background:${z.color}"></i>${statsEsc(z.d.name)}</span>`).join("");
- const pointRanked=[...drivers].filter(d=>Number.isFinite(Number(d.points))).sort((a,b)=>Number(b.points)-Number(a.points));
- const maxPoints=Math.max(1,...pointRanked.map(d=>Number(d.points)));
- const pointBars=pointRanked.map((d,index)=>{const value=Number(d.points);return `<div class="stats-points-row"><div class="stats-points-rank">${String(index+1).padStart(2,"0")}</div><div class="stats-points-main"><div class="stats-points-label"><span class="stats-points-driver">${statsEsc(d.name)}</span><span class="stats-points-team">${statsEsc(d.team||"")}</span></div><div class="stats-points-track"><span style="width:${Math.max(0,Math.min(100,value/maxPoints*100))}%;background:${palette[index%palette.length]}"></span></div></div><div class="stats-points-value">${statsEsc(value)}</div></div>`}).join("");
- const pointsBreakdown=`<section class="stats-points-breakdown"><div class="stats-points-heading"><div><h3 class="stats-section-title">Championship points by driver</h3><p class="stats-note">A quick standings snapshot, ranked by points. Longer bars indicate a larger points total.</p></div><span class="stats-points-count">${pointRanked.length} DRIVERS</span></div>${pointBars||'<div class="stats-empty">Driver points are not available in the current standings feed.</div>'}</section>`;
- return `<div class="stats-chart-scroll"><svg class="stats-trend stats-season-chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Cumulative championship points for all drivers by round">${grid}${lines}${ticks}</svg></div><div class="stats-trend-legend">${legend}</div>${pointsBreakdown}`;
+ const comparison=drivers.map(d=>({d,qual:d.avgQual,finish:d.avgFinish})).filter(x=>x.qual!==null&&x.qual!==undefined&&x.finish!==null&&x.finish!==undefined).sort((a,b)=>a.qual-b.qual);
+ const positionChart=comparison.map((x,i)=>{const q=Math.max(0,Math.min(100,(x.qual/20)*100)),f=Math.max(0,Math.min(100,(x.finish/20)*100));return `<div class="stats-qf-row"><div class="stats-qf-name"><span>${statsEsc(x.d.name)}</span><small>${statsEsc(x.d.team||"")}</small></div><div class="stats-qf-bars"><div class="stats-qf-line"><span>QUAL</span><div class="stats-qf-track"><i style="width:${q}%;background:#3987E8"></i></div><b>P${x.qual.toFixed(1)}</b></div><div class="stats-qf-line"><span>FINISH</span><div class="stats-qf-track"><i style="width:${f}%;background:#19A58C"></i></div><b>P${x.finish.toFixed(1)}</b></div></div><div class="stats-qf-delta ${x.qual-x.finish>0?"gain":x.qual-x.finish<0?"loss":""}">${x.qual===x.finish?"—":(x.qual-x.finish>0?"+":"")+(x.qual-x.finish).toFixed(1)}</div></div>`}).join("");
+ const performance=drivers.map(d=>{const paired=rounds.map(r=>{const q=statsNum(d.roundQualifying?.[r.round]),f=statsNum(d.roundResults?.[r.round]?.position);return q!==null&&f!==null?{round:r,qual:q,finish:f,gain:q-f}:null}).filter(Boolean);return {d,paired,avg:paired.length?paired.reduce((sum,x)=>sum+x.gain,0)/paired.length:null,gained:paired.filter(x=>x.gain>0).length,lost:paired.filter(x=>x.gain<0).length,same:paired.filter(x=>x.gain===0).length}}).filter(x=>x.avg!==null).sort((a,b)=>b.avg-a.avg);
+ const gainRows=performance.map((x,i)=>`<div class="stats-gain-row"><span class="stats-gain-rank">${String(i+1).padStart(2,"0")}</span><span class="stats-gain-driver">${statsEsc(x.d.name)}<small>${x.paired.length} matched GP weekends</small></span><b class="${x.avg>0?"gain":x.avg<0?"loss":""}">${x.avg>0?"+":""}${x.avg.toFixed(1)} <small>PLACES</small></b><span class="stats-gain-record"><i>${x.gained} gained</i><i>${x.lost} lost</i></span></div>`).join("");
+ const drives=performance.flatMap(x=>x.paired.map(p=>({...p,d:x.d})));
+ const best=[...drives].sort((a,b)=>b.gain-a.gain||a.finish-b.finish).filter(x=>x.gain>0).slice(0,5);
+ const worst=[...drives].sort((a,b)=>a.gain-b.gain||b.finish-a.finish).filter(x=>x.gain<0).slice(0,5);
+ const driveRows=(items,kind)=>items.map(x=>`<div class="stats-drive-row"><span class="stats-drive-round">R${x.round.round}<small>${statsEsc(x.round.name.replace(/ Grand Prix$/," GP"))}</small></span><span class="stats-drive-driver">${statsEsc(x.d.name)}</span><span class="stats-drive-positions">Q P${x.qual} <icon></icon> P${x.finish}</span><b class="${kind}">${x.gain>0?"+":""}${x.gain}</b></div>`).join("");
+ const recovery=`<div class="stats-recovery-grid"><section class="stats-analysis-panel"><h4>Biggest gains</h4><p class="stats-note">Largest improvements from qualifying to classified finish.</p>${best.length?driveRows(best,"gain"):'<div class="stats-empty">No qualifying-to-finish gains recorded yet.</div>'}</section><section class="stats-analysis-panel"><h4>Biggest drops</h4><p class="stats-note">Largest position losses from qualifying to classified finish.</p>${worst.length?driveRows(worst,"loss"):'<div class="stats-empty">No qualifying-to-finish drops recorded yet.</div>'}</section></div>`;
+ const positionBreakdown=`<section class="stats-performance"><div class="stats-points-heading"><div><h3 class="stats-section-title">Average qualifying vs race finish</h3><p class="stats-note">Average positions for each driver. Lower position numbers are better; only available averages are shown.</p></div><span class="stats-points-count">${comparison.length} DRIVERS</span></div><div class="stats-qf-legend"><span><i style="background:#3987E8"></i>Qualifying</span><span><i style="background:#19A58C"></i>Race finish</span><span class="stats-note">Position gain = qualifying position − finishing position</span></div>${comparison.length?positionChart:'<div class="stats-empty">Qualifying and finishing averages are not both available.</div>'}</section>`;
+ const gainBreakdown=`<section class="stats-performance"><div class="stats-points-heading"><div><h3 class="stats-section-title">Position gain leaderboard</h3><p class="stats-note">Average places gained or lost across rounds with both a qualifying position and a classified finish.</p></div><span class="stats-points-count">${performance.length} DRIVERS</span></div>${gainRows||'<div class="stats-empty">Matched qualifying and race results are not available yet.</div>'}</section>`;
+ return `<div class="stats-chart-scroll"><svg class="stats-trend stats-season-chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="Cumulative championship points for all drivers by round">${grid}${lines}${ticks}</svg></div><div class="stats-trend-legend">${legend}</div><div class="stats-performance-heading"><span class="stats-kicker">RACE EXECUTION</span><h3 class="stats-section-title">Qualifying vs race performance</h3><p class="stats-note">Compare one-lap starting performance with classified Grand Prix finishes. Sprint sessions and sprint results are excluded.</p></div>${positionBreakdown}${gainBreakdown}${recovery}`;
 }
 function statsOptions(selected,other){return statsState.data.drivers.filter(d=>d.id!==other).map(d=>`<option value="${statsEsc(d.id)}" ${d.id===selected?"selected":""}>${statsEsc(d.name)}</option>`).join("")}
 function statsDriverCard(d,side,other){
