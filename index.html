@@ -664,9 +664,6 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
 /* Session-specific weather forecast in Race Centre */
 /* Weather is an integrated part of the Weekend Status card */
 .briefing-weather-inline{margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
-.briefing-weather-live{margin:0 0 12px;padding:11px 12px;border:1px solid rgba(22,163,74,.28);border-radius:10px;background:rgba(22,163,74,.055)}
-.briefing-weather-live .briefing-lead{font-size:16px;margin:7px 0 3px}
-.briefing-weather-live>p:last-child{font-size:12px;color:var(--mute);margin:0}
 .briefing-weather-inline:empty{display:none}
 .briefing-weather-inline .briefing-weather-head{margin-bottom:10px}
 .briefing-weather-inline .briefing-weather-head .briefing-lead{font-size:13px;margin-bottom:2px}
@@ -1247,17 +1244,6 @@ function renderBriefing(){
 }
 // Open-Meteo non-commercial forecast: locate the circuit, then sample hourly weather at each session start.
 const briefingWeatherCache=new Map();
-let briefingWeatherBaseHtml="";
-function renderBriefingWeatherSessionStatus(){
- const box=$("briefingWeather");if(!box)return;
- const sessions=(countdownSessions||[]).filter(s=>Number.isFinite(s.start)&&Number.isFinite(s.end));
- const now=Date.now(),active=sessions.find(s=>s.start<=now&&now<s.end);
- if(!briefingWeatherBaseHtml)return;
- const notice=active
-  ?'<div class="briefing-weather-live" role="status"><div class="briefing-statusline"><span class="briefing-live-dot"></span><span>SESSION IN PROGRESS</span></div><p class="briefing-lead">'+esc(sessionLabel(active))+'</p><p>'+esc(active.race||"Grand Prix")+' is currently scheduled to be on track.</p></div>'
-  :"";
- box.innerHTML=notice+briefingWeatherBaseHtml;
-}
 function briefingWeatherCode(code){
  const c=Number(code);
  if(c===0)return ["☀️","Clear sky"];
@@ -1281,7 +1267,7 @@ async function loadWeekendForecast(meeting){
  const key=String(meeting.meeting_key||meeting.meeting_name||meeting.location||"");
  box.innerHTML='<div class="state">Finding the circuit forecast…</div>';
  try{
-  if(briefingWeatherCache.has(key)){briefingWeatherBaseHtml=briefingWeatherCache.get(key);renderBriefingWeatherSessionStatus();return}
+  if(briefingWeatherCache.has(key)){box.innerHTML=briefingWeatherCache.get(key);return}
   const countryName=String(meeting.country_name||"").trim();
   const searchNames=[meeting.location,meeting.circuit_short_name,meeting.meeting_name]
    .map(v=>String(v||"").trim()).filter(Boolean)
@@ -1328,11 +1314,10 @@ async function loadWeekendForecast(meeting){
   }else{
    html+='<p>No upcoming session falls within the current forecast window. Check back when the weekend is closer.</p><p class="briefing-weather-foot"><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
   }
-  briefingWeatherCache.set(key,html);briefingWeatherBaseHtml=html;renderBriefingWeatherSessionStatus();
+  briefingWeatherCache.set(key,html);box.innerHTML=html;
  }catch(e){
   console.warn("Redline Grid forecast error:",e);
-  briefingWeatherBaseHtml='<p class="briefing-lead">Forecast unavailable right now</p><p>Redline could not load the circuit forecast. Try refreshing later.</p><p class="briefing-weather-foot">Forecasts are limited to the next 16 days. <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
-  renderBriefingWeatherSessionStatus();
+  box.innerHTML='<p class="briefing-lead">Forecast unavailable right now</p><p>Redline could not load the circuit forecast. Try refreshing later.</p><p class="briefing-weather-foot">Forecasts are limited to the next 16 days. <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
  }
 }
 let briefingFeaturesBusy=false,briefingFeaturesLoaded="";
@@ -1951,7 +1936,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 
 loadYear(nowY);renderBriefing();
 // Keep the recap's live-session notice in sync with session start/end times.
-setInterval(()=>{renderBriefingRecapSessionStatus();renderBriefingWeatherSessionStatus()},15000);
+setInterval(renderBriefingRecapSessionStatus,15000);
 </script>
 </body>
 </html>
