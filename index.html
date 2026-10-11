@@ -2077,7 +2077,9 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
  window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}),{once:true});
 }
 
-loadYear(nowY);renderBriefing();
+// Prioritise Home's schedule and race summary requests before initialising the heavier season-data panels.
+renderBriefing();
+setTimeout(()=>loadYear(nowY),1200);
 // Keep the recap's live-session notice in sync with session start/end times.
 setInterval(renderBriefingRecapSessionStatus,15000);
 </script>
