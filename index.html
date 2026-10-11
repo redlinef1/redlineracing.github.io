@@ -709,7 +709,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
   <button role="tab" aria-selected="false" data-v="cal">Calendar</button>
   <button role="tab" aria-selected="false" data-v="standings">Standings</button>
   <button role="tab" aria-selected="false" data-v="race">Race</button>
-  <button role="tab" aria-selected="false" data-v="live">Live</button>
+  <button role="tab" aria-selected="false" data-v="live">Session Data</button>
   <button role="tab" aria-selected="false" data-v="tele">Telemetry</button>
  </nav>
  <div id="sub" hidden></div>
@@ -725,7 +725,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
   <div class="stats-subnav" role="tablist" aria-label="Driver statistics sections"><button type="button" data-stats-view="overview" aria-selected="false">Overview</button><button type="button" data-stats-view="head" aria-selected="true">Head-to-Head</button><button type="button" data-stats-view="trends" aria-selected="false">Season Trends</button></div>
   <div id="statsContent"><div class="state">Loading driver statistics…</div></div>
 </section>
-<section class="panel pane" id="v-live" hidden><h2 id="liveTitle">Live positions</h2><div class="tools" id="liveBar"></div><div class="scroll" id="liveList"><div class="state">Loading…</div></div></section>
+<section class="panel pane" id="v-live" hidden><h2 id="liveTitle">Session positions</h2><div class="tools" id="liveBar"></div><div class="scroll" id="liveList"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-result" hidden><h2 id="resTitle">Race result</h2><div class="scroll" id="result"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-control" hidden><h2>Race control</h2><div id="controlInsights" class="control-insights" aria-live="polite"><div class="state">Building race-control summary…</div></div><div class="control-tools" id="controlTools" aria-label="Filter race control messages"><div class="control-filters" role="group" aria-label="Message category"><button type="button" data-control-filter="all" aria-pressed="true">All</button><button type="button" data-control-filter="flags" aria-pressed="false">Flags</button><button type="button" data-control-filter="safety" aria-pressed="false">Safety Car</button><button type="button" data-control-filter="incidents" aria-pressed="false">Incidents</button><button type="button" data-control-filter="other" aria-pressed="false">Other</button></div><button type="button" class="control-order" id="controlOrder" aria-label="Change message order">Newest first ↓</button></div><div class="scroll" id="control"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-radio" hidden><h2>Team radio</h2><div class="tools"><select id="rsess" aria-label="Session"></select></div><div class="scroll" id="radioList"><div class="state">Loading…</div></div></section>
