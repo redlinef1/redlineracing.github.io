@@ -205,6 +205,24 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
 .msg.event-green{border-left-color:#16a34a}.msg.event-green .flag{background:#16a34a;color:#fff}
 .msg.event-blue{border-left-color:#2a6df5}.msg.event-blue .flag{background:#2a6df5;color:#fff}
 .msg.event-neutral{border-left-color:var(--mute)}
+.control-insights{padding:12px 14px 0}
+.control-insight-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.control-insight{min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card,var(--panel))}
+.control-insight .insight-label{display:block;color:var(--mute);font:600 9px/1.35 Inter;text-transform:uppercase;letter-spacing:.08em}
+.control-insight strong{display:block;margin:5px 0 2px;color:var(--txt);font:700 23px/1 Inter;font-variant-numeric:tabular-nums}
+.control-insight .insight-note{display:block;color:var(--mute);font-size:10px;line-height:1.35}
+.control-insight.insight-red{border-top:2px solid #d93636}.control-insight.insight-red strong{color:#e04444}
+.control-insight.insight-safety{border-top:2px solid #d9a900}.control-insight.insight-incident{border-top:2px solid #8b5cf6}
+.control-headline{display:flex;gap:9px;align-items:flex-start;margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card,var(--panel))}
+.headline-dot{width:7px;height:7px;flex:0 0 7px;margin-top:5px;border-radius:50%;background:var(--red)}
+.control-headline .insight-label{font:600 9px/1.35 Inter;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
+.control-headline p{margin:4px 0 0;color:var(--txt);font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+.msg.event-safety{border-left-color:#d9a900}.msg.event-incident{border-left-color:#8b5cf6}
+.msg.priority-critical{background:color-mix(in srgb,#d93636 7%,var(--card,var(--panel)))}
+.msg.priority-high{border-top-color:color-mix(in srgb,#e5a000 45%,var(--line))}
+.severity-pill{display:inline-block;margin:0 6px 5px 0;padding:3px 6px;border-radius:5px;font:700 9px/1.3 Inter;letter-spacing:.04em;text-transform:uppercase}
+.severity-critical{background:#d93636;color:#fff}.severity-high{background:#f4c542;color:#171717}.severity-review{background:#ede9fe;color:#5b21b6}
+@media(max-width:560px){.control-insight-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.control-insight{padding:10px}.control-insight strong{font-size:21px}}
 .control-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:11px 14px;border-bottom:1px solid var(--line)}
 .control-filters{display:flex;gap:6px;flex-wrap:wrap}
 .control-filters button,.control-order{border:1px solid var(--line);background:var(--card2);color:var(--mute);border-radius:999px;padding:7px 11px;font:600 11px Inter;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
@@ -699,7 +717,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
 </section>
 <section class="panel pane" id="v-live" hidden><h2 id="liveTitle">Live positions</h2><div class="tools" id="liveBar"></div><div class="scroll" id="liveList"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-result" hidden><h2 id="resTitle">Race result</h2><div class="scroll" id="result"><div class="state">Loading…</div></div></section>
- <section class="panel pane" id="v-control" hidden><h2>Race control</h2><div class="control-tools" id="controlTools" aria-label="Filter race control messages"><div class="control-filters" role="group" aria-label="Message category"><button type="button" data-control-filter="all" aria-pressed="true">All</button><button type="button" data-control-filter="flags" aria-pressed="false">Flags</button><button type="button" data-control-filter="safety" aria-pressed="false">Safety Car</button><button type="button" data-control-filter="incidents" aria-pressed="false">Incidents</button><button type="button" data-control-filter="other" aria-pressed="false">Other</button></div><button type="button" class="control-order" id="controlOrder" aria-label="Change message order">Newest first ↓</button></div><div class="scroll" id="control"><div class="state">Loading…</div></div></section>
+ <section class="panel pane" id="v-control" hidden><h2>Race control</h2><div id="controlInsights" class="control-insights" aria-live="polite"><div class="state">Building race-control summary…</div></div><div class="control-tools" id="controlTools" aria-label="Filter race control messages"><div class="control-filters" role="group" aria-label="Message category"><button type="button" data-control-filter="all" aria-pressed="true">All</button><button type="button" data-control-filter="flags" aria-pressed="false">Flags</button><button type="button" data-control-filter="safety" aria-pressed="false">Safety Car</button><button type="button" data-control-filter="incidents" aria-pressed="false">Incidents</button><button type="button" data-control-filter="other" aria-pressed="false">Other</button></div><button type="button" class="control-order" id="controlOrder" aria-label="Change message order">Newest first ↓</button></div><div class="scroll" id="control"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-radio" hidden><h2>Team radio</h2><div class="tools"><select id="rsess" aria-label="Session"></select></div><div class="scroll" id="radioList"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-weather" hidden><h2>Weather</h2><div class="tools"><select id="wsess" aria-label="Session"></select></div><div id="weatherView"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-tele" hidden><h2>Telemetry</h2>
@@ -1013,9 +1031,9 @@ async function loadResult(){
 let controlMessages=[],controlFilter="all",controlOrder="newest";
 function controlCategory(x){
  const flag=String(x.flag||"").toLowerCase(),msg=String(x.message||"").toLowerCase();
- if(x.flag||/\\bflag\\b|track clear|yellow sector/.test(msg))return "flags";
- if(/safety car|virtual safety car|\\bvsc\\b|\\bfcy\\b|full course yellow/.test(msg))return "safety";
+ if(/safety car|virtual safety car|\bvsc\b|\bfcy\b|full course yellow/.test(msg))return "safety";
  if(/incident|investigation|collision|contact|unsafe release|penalt|infringement|noted by the stewards|black and white flag/.test(msg))return "incidents";
+ if(x.flag||/\bflag\b|track clear|yellow sector/.test(msg))return "flags";
  return "other";
 }
 function controlEventStyle(x){
@@ -1024,10 +1042,28 @@ function controlEventStyle(x){
  if(flag.includes("YELLOW")||flag==="DOUBLE"||/yellow flag|yellow sector/.test(msg))return "event-yellow";
  if(flag.includes("GREEN")||flag==="CLEAR"||/green flag|track clear/.test(msg))return "event-green";
  if(flag.includes("BLUE")||/blue flag/.test(msg))return "event-blue";
+ if(controlCategory(x)==="safety")return "event-safety";
+ if(controlCategory(x)==="incidents")return "event-incident";
  return "event-neutral";
 }
+function controlSeverity(x){
+ const msg=String(x.message||"").toLowerCase(),flag=String(x.flag||"").toUpperCase();
+ if(flag.includes("RED")||/red flag|session suspended|session stopped/.test(msg))return {label:"Critical",kind:"critical"};
+ if(/safety car|virtual safety car|\bvsc\b|\bfcy\b|full course yellow|collision|crash|unsafe release|black flag|disqualif|penalt/.test(msg))return {label:"High priority",kind:"high"};
+ if(/investigation|incident|contact|infringement|noted by the stewards|yellow flag|yellow sector/.test(msg)||flag.includes("YELLOW"))return {label:"Review",kind:"review"};
+ return null;
+}
+function renderControlInsights(){
+ const host=$("controlInsights"),count=controlMessages.length;
+ const red=controlMessages.filter(x=>controlSeverity(x)?.kind==="critical").length;
+ const safety=controlMessages.filter(x=>controlCategory(x)==="safety").length;
+ const incidents=controlMessages.filter(x=>controlCategory(x)==="incidents").length;
+ const latest=controlMessages.find(x=>controlSeverity(x));
+ const latestText=latest?String(latest.message||latest.flag||"Priority event recorded"):"No priority event detected in the loaded messages."; 
+ host.innerHTML=`<div class="control-insight-grid"><div class="control-insight"><span class="insight-label">Messages loaded</span><strong>${count}</strong><span class="insight-note">Latest 80 maximum</span></div><div class="control-insight insight-red"><span class="insight-label">Critical alerts</span><strong>${red}</strong><span class="insight-note">Red flag / session stop</span></div><div class="control-insight insight-safety"><span class="insight-label">Safety notices</span><strong>${safety}</strong><span class="insight-note">SC · VSC · FCY</span></div><div class="control-insight insight-incident"><span class="insight-label">Incident notices</span><strong>${incidents}</strong><span class="insight-note">Stewards & penalties</span></div></div><div class="control-headline"><span class="headline-dot"></span><div><span class="insight-label">Latest priority message</span><p>${esc(latestText)}</p></div></div>`;
+}
 function renderControlTimeline(){
- const host=$("control");
+ const host=$("control");renderControlInsights();
  if(!controlMessages.length){host.innerHTML='<div class="state">No messages recorded for this session.</div>';return}
  const filtered=controlFilter==="all"?controlMessages:controlMessages.filter(x=>controlCategory(x)===controlFilter);
  const ordered=controlOrder==="newest"?filtered:filtered.slice().reverse();
@@ -1038,8 +1074,8 @@ function renderControlTimeline(){
   const date=new Date(x.date),time=Number.isNaN(date.getTime())?"--:--":date.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
   const flag=x.flag?String(x.flag).replace(/_/g," "):"Race Control";
   const lap=x.lap_number!=null&&x.lap_number!==""?"Lap "+esc(x.lap_number):"Session message";
-  const category=controlCategory(x);
-  return `<article class="msg ${controlEventStyle(x)}"><div><time>${time}</time><span class="msg-meta">${lap}</span><span class="msg-category">${category==="safety"?"Safety Car":category==="incidents"?"Incident":category==="flags"?"Flag":"Other"}</span></div><div class="msg-body">${x.flag?`<span class="flag">${esc(flag)}</span>`:""}<span class="msg-text">${esc(x.message||"Race control message")}</span></div></article>`;
+  const category=controlCategory(x),severity=controlSeverity(x);
+  return `<article class="msg ${controlEventStyle(x)} ${severity?"priority-"+severity.kind:""}"><div><time>${time}</time><span class="msg-meta">${lap}</span><span class="msg-category">${category==="safety"?"Safety Car":category==="incidents"?"Incident":category==="flags"?"Flag":"Other"}</span></div><div class="msg-body">${severity?`<span class="severity-pill severity-${severity.kind}">${severity.label}</span>`:""}${x.flag?`<span class="flag">${esc(flag)}</span>`:""}<span class="msg-text">${esc(x.message||"Race control message")}</span></div></article>`;
  }).join("");
 }
 $("controlTools").addEventListener("click",e=>{
@@ -1048,14 +1084,10 @@ $("controlTools").addEventListener("click",e=>{
  if(e.target.closest("#controlOrder")){controlOrder=controlOrder==="newest"?"oldest":"newest";renderControlTimeline()}
 });
 async function loadControl(){
- if(cur?._source==="jolpica"){$("control").innerHTML=noJolpicaLive;return}
+ if(cur?._source==="jolpica"){$("control").innerHTML=noJolpicaLive;$("controlInsights").innerHTML='<div class="state">Race-control summaries require session message data.</div>';return}
  const t=tok;
- try{
-  const m=(await get(`/race_control?session_key=${cur.session_key}`)).sort((a,b)=>new Date(b.date)-new Date(a.date));if(!ok(t))return;
-  controlMessages=m.slice(0,80);controlFilter="all";controlOrder="newest";renderControlTimeline();
- }catch(e){ok(t)&&fail("control",e)}
+ try{const m=(await get(`/race_control?session_key=${cur.session_key}`)).sort((a,b)=>new Date(b.date)-new Date(a.date));if(!ok(t))return;controlMessages=m.slice(0,80);controlFilter="all";controlOrder="newest";renderControlTimeline()}catch(e){ok(t)&&fail("control",e)}
 }
-
 // Team radio: any session of the selected race weekend
 let rclips=[],rby={};
 async function loadSessions(race){const t0=tok;
