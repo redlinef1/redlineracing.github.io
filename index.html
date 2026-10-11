@@ -1370,10 +1370,10 @@ function statsMerge(year,standingData,raceData,qualData,prior){
  const by={};(prior?.drivers||[]).forEach(d=>{by[d.id]={...d}});
  const standings=standingData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings||[];
  standings.forEach((v,i)=>{const id=statsDriverId(v);if(!id)return;const d=by[id]||{id};d.name=statsName(v);d.code=v.Driver?.code||"";d.number=v.Driver?.permanentNumber||"";d.team=statsTeam(v);d.points=statsNum(v.points);d.wins=statsNum(v.wins);d.position=statsNum(v.position)||i+1;d.championshipAvailable=true;by[id]=d});
- Object.values(by).forEach(d=>{d.podiums=0;d.poles=0;d.fastest=0;d.finishSum=0;d.finishCount=0;d.roundPoints={}});
+ Object.values(by).forEach(d=>{d.podiums=0;d.poles=0;d.fastest=0;d.retirements=0;d.finishSum=0;d.finishCount=0;d.roundPoints={}});
  if(raceData){
   const races=raceData.RaceTable?.Races||[];
-  races.forEach(r=>{(r.Results||[]).forEach(v=>{const id=statsDriverId(v);if(!by[id])by[id]={id,name:statsName(v),team:statsTeam(v),points:null,wins:null,position:null,podiums:0,poles:0,fastest:0,finishSum:0,finishCount:0,roundPoints:{}};const d=by[id],pos=statsNum(v.position);if(pos&&pos<=3)d.podiums++;if(pos){d.finishSum+=pos;d.finishCount++}const round=Number(r.round);d.roundPoints[round]=(d.roundPoints[round]||0)+(statsNum(v.points)||0);if(v.FastestLap?.rank==="1"||Number(v.FastestLap?.rank)===1)d.fastest++})});
+  races.forEach(r=>{(r.Results||[]).forEach(v=>{const id=statsDriverId(v);if(!by[id])by[id]={id,name:statsName(v),team:statsTeam(v),points:null,wins:null,position:null,podiums:0,poles:0,fastest:0,retirements:0,finishSum:0,finishCount:0,roundPoints:{}};const d=by[id],pos=statsNum(v.position),status=String(v.status||"").trim().toLowerCase(),classified=/^finished$|^\+\d+\s+laps?$/.test(status),excluded=/disqualif|did not start|did not qualify|withdraw|excluded|107% rule/.test(status);if(status&&!classified&&!excluded)d.retirements=(d.retirements||0)+1;if(pos&&pos<=3)d.podiums++;if(pos){d.finishSum+=pos;d.finishCount++}const round=Number(r.round);d.roundPoints[round]=(d.roundPoints[round]||0)+(statsNum(v.points)||0);if(v.FastestLap?.rank==="1"||Number(v.FastestLap?.rank)===1)d.fastest++})});
  }
  if(qualData){
   const races=qualData.RaceTable?.Races||[];
@@ -1431,7 +1431,7 @@ function renderDriverStats(){
   html+='<h3 class="stats-section-title">Season Record Book</h3><p class="stats-note" style="margin:0 0 14px">A neutral look at the season’s leading performances. Each category shows the top three recorded results, with ties included.</p><div class="stats-record-grid">'+[
    ["Wins","wins","wins",false],
    ["Podiums","podiums","podiums",false],
-   ["Points","points","championship points",false],
+   ["Retirements","retirements","retirements",false],
    ["Fastest laps","fastest","fastest laps",false],
    ["Avg. qualifying","avgQual","average grid position",true],
    ["Avg. finish","avgFinish","average finishing position",true]
