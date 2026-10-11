@@ -1435,8 +1435,8 @@ function renderDriverStats(){
    ["Avg. qualifying","avgQual","average grid position",true],
    ["Avg. finish","avgFinish","average finishing position",true]
   ].map(([label,key,unit,lowerBetter])=>{
-   const rows=drivers.map(d=>({d,value:statsNum(d[key])})).filter(x=>x.value!==null).sort((x,y)=>lowerBetter?x.value-y.value:y.value-x.value);
-   if(!rows.length)return `<article class="stats-record"><div class="stats-record-label">${label}</div><div class="stats-record-value">—</div><div class="stats-record-leader">No data available</div><div class="stats-record-foot">Waiting for season results</div></article>`;
+   const rows=drivers.map(d=>({d,value:statsNum(d[key])})).filter(x=>x.value!==null&&(key!=="poles"||x.value>0)).sort((x,y)=>lowerBetter?x.value-y.value:y.value-x.value);
+   if(!rows.length)return `<article class="stats-record"><div class="stats-record-label">${label}</div><div class="stats-record-value">—</div><div class="stats-record-leader">${key==="poles"?"No recorded pole positions":"No data available"}</div><div class="stats-record-foot">${key==="poles"?"Only drivers with at least one pole are listed":"Waiting for season results"}</div></article>`;
    const cutoff=rows[Math.min(2,rows.length-1)].value;
    const ranked=rows.filter(x=>lowerBetter?x.value<=cutoff:x.value>=cutoff);
    const best=rows[0].value;
