@@ -13,24 +13,23 @@
 <title>Redline Grid · Motorsport Data &amp; Race History</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Chakra+Petch:ital,wght@0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
 <style>
-/* Optional wallpaper: set --bg-image: url("wallpaper.jpg"); */
-:root{--bg-image:none;color-scheme:dark;--bg:#0A0A0D;--card:rgba(255,255,255,.04);--card2:#17171d;--sheet:#121218;--chip:#2a2a35;--soft:rgba(255,255,255,.04);--hover:rgba(255,255,255,.06);
- --line:rgba(255,255,255,.09);--red:#FF1E00;--mute:#8B8B98;--txt:#F4F4F6;--navbg:rgba(14,14,18,.94);--subbg:rgba(10,10,13,.9);--on-bg:#fff;--on-fg:#0A0A0D;
- --glow:rgba(255,30,0,.26);--veil:rgba(10,10,13,.25);--carbon:.55}
-:root[data-theme=light]{color-scheme:light;--bg:#EEF0F3;--card:rgba(255,255,255,.8);--card2:#fff;--sheet:#fff;--chip:#E3E4EA;--soft:rgba(21,21,30,.04);--hover:rgba(21,21,30,.06);
- --line:rgba(21,21,30,.12);--red:#E10600;--mute:#5A5A68;--txt:#15151E;--navbg:rgba(255,255,255,.95);--subbg:rgba(238,240,243,.93);--on-bg:#15151E;--on-fg:#fff;
- --glow:rgba(225,6,0,.12);--veil:rgba(238,240,243,.35);--carbon:0}
+/* Refined motorsport canvas: graphite, soft pit-lane glow and restrained technical grid. */
+:root{--bg-image:none;color-scheme:dark;--bg:#090B10;--card:rgba(255,255,255,.045);--card2:#151820;--sheet:#10131A;--chip:#252A35;--soft:rgba(255,255,255,.035);--hover:rgba(255,255,255,.06);
+ --line:rgba(220,228,240,.10);--red:#FF2A18;--mute:#9299A8;--txt:#F2F4F8;--navbg:rgba(12,15,21,.94);--subbg:rgba(9,11,16,.92);--on-bg:#F2F4F8;--on-fg:#090B10;
+ --glow:rgba(255,42,24,.13);--veil:rgba(9,11,16,.18);--carbon:.24}
+:root[data-theme=light]{color-scheme:light;--bg:#F0F2F5;--card:rgba(255,255,255,.78);--card2:#fff;--sheet:#fff;--chip:#E3E6EC;--soft:rgba(21,27,38,.035);--hover:rgba(21,27,38,.06);
+ --line:rgba(21,27,38,.11);--red:#D71912;--mute:#5D6573;--txt:#171B24;--navbg:rgba(255,255,255,.94);--subbg:rgba(240,242,245,.93);--on-bg:#171B24;--on-fg:#fff;
+ --glow:rgba(215,25,18,.07);--veil:rgba(240,242,245,.22);--carbon:0}
 *{box-sizing:border-box;margin:0}
 body{font-family:Inter,system-ui,sans-serif;color:var(--txt);line-height:1.5;min-height:100vh;background:var(--bg)}
-/* F1 look: carbon-fibre weave, diagonal speed lines, red glow and a kerb stripe */
-body::before{content:"";position:fixed;inset:0;z-index:-2;opacity:var(--carbon);
- background:linear-gradient(27deg,#151515 5px,transparent 5px) 0 5px,linear-gradient(207deg,#151515 5px,transparent 5px) 10px 0,linear-gradient(27deg,#222 5px,transparent 5px) 0 10px,
-  linear-gradient(207deg,#222 5px,transparent 5px) 10px 5px,linear-gradient(90deg,#1b1b1b 10px,transparent 10px),linear-gradient(#1d1d1d 25%,#1a1a1a 25%,#1a1a1a 50%,transparent 50%,transparent 75%,#242424 75%,#242424);
- background-color:#131313;background-size:20px 20px}
+/* Fine technical grid stays in the background instead of competing with content. */
+body::before{content:"";position:fixed;inset:0;z-index:-2;opacity:var(--carbon);pointer-events:none;
+ background-image:linear-gradient(rgba(210,220,235,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(210,220,235,.035) 1px,transparent 1px);
+ background-size:56px 56px}
 body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
- background:var(--bg-image),radial-gradient(900px 520px at 92% -8%,var(--glow),transparent 60%),repeating-linear-gradient(115deg,transparent 0 70px,rgba(255,30,0,.045) 70px 72px),linear-gradient(180deg,var(--veil),var(--bg) 88%);
+ background:var(--bg-image),radial-gradient(ellipse 760px 440px at 100% 0%,var(--glow),transparent 72%),radial-gradient(ellipse 620px 520px at 0% 48%,rgba(76,99,135,.07),transparent 74%),linear-gradient(180deg,transparent 0%,var(--veil) 58%,var(--bg) 100%);
  background-size:cover,auto,auto,auto;background-position:center}
-.kerb{position:fixed;top:0;left:0;right:0;height:6px;z-index:50;background:repeating-linear-gradient(90deg,#FF1E00 0 26px,#fff 26px 52px)}
+.kerb{position:fixed;top:0;left:0;right:0;height:2px;z-index:50;background:linear-gradient(90deg,var(--red) 0%,rgba(255,42,24,.7) 28%,rgba(255,42,24,.16) 68%,transparent 100%);box-shadow:0 1px 12px rgba(255,42,24,.12)}
 .themebtn{position:fixed;top:16px;right:14px;z-index:15;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--card2);color:var(--txt);display:grid;place-items:center;cursor:pointer}.themebtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .themebtn:hover{border-color:var(--red)}
 .wrap{max-width:1180px;margin:0 auto;padding:26px 18px 60px}
