@@ -608,6 +608,26 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
  .stats-round-count{min-width:58px;padding:8px}
 }
 
+/* Session-specific weather forecast in Race Centre */
+.briefing-weather-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.briefing-weather-track{font-size:12px;color:var(--mute);margin-top:3px}
+.briefing-weather-updated{font-size:10px;color:var(--mute);text-align:right;white-space:nowrap}
+.briefing-weather-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.briefing-weather-session{min-width:0;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--soft)}
+.briefing-weather-session.next{border-color:color-mix(in srgb,var(--red) 55%,var(--line));box-shadow:inset 0 2px 0 var(--red)}
+.briefing-weather-session h4{font:600 12px Inter;color:var(--txt);overflow-wrap:anywhere}
+.briefing-weather-session .bws-time{font-size:10px;color:var(--mute);margin-top:3px}
+.briefing-weather-main{display:flex;align-items:center;gap:8px;margin:12px 0 8px}
+.briefing-weather-icon{font-size:25px;line-height:1}
+.briefing-weather-temp{font:600 25px/1 "IBM Plex Mono",monospace;color:var(--txt)}
+.briefing-weather-condition{font-size:11px;color:var(--mute);line-height:1.35;margin-top:4px}
+.briefing-weather-stats{display:grid;gap:5px;padding-top:8px;border-top:1px solid var(--line);font-size:11px;color:var(--mute)}
+.briefing-weather-stats span{display:flex;justify-content:space-between;gap:5px}
+.briefing-weather-stats b{font-weight:600;color:var(--txt);white-space:nowrap}
+.briefing-weather-foot{font-size:10px;color:var(--mute);line-height:1.5;margin-top:11px}
+.briefing-weather-foot a{color:var(--red);text-decoration:none}
+@media(max-width:760px){.briefing-weather-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.briefing-weather-updated{white-space:normal}}
+@media(max-width:390px){.briefing-weather-session{padding:10px}.briefing-weather-temp{font-size:22px}.briefing-weather-main{gap:6px}}
 </style>
 </head>
 <body>
@@ -661,6 +681,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
   <p class="briefing-note" id="briefingNote" role="status" aria-live="polite">Loading the latest available session schedule…</p>
   <div class="briefing-grid">
    <section class="briefing-card briefing-wide"><p class="briefing-kicker">THE SITUATION</p><h3>Weekend status</h3><div id="briefingSummary" class="briefing-content"><div class="state">Checking the schedule…</div></div></section>
+   <section class="briefing-card briefing-wide" id="briefingWeatherCard"><p class="briefing-kicker">TRACK CONDITIONS / OPEN-METEO</p><h3>Weekend weather</h3><div id="briefingWeather" class="briefing-content"><div class="state">Loading circuit forecast…</div></div></section>
    <section class="briefing-card briefing-wide briefing-priority"><p class="briefing-kicker">RACE REPORT</p><h3>Latest Race Recap</h3><div id="briefingRecap" class="briefing-content"><div class="state">Loading the latest verified race result…</div></div></section>
    <div class="briefing-feature-grid">
     <section class="briefing-card"><p class="briefing-kicker">SESSION SPOTLIGHT</p><h3>Latest session</h3><div id="briefingSpotlight" class="briefing-content"><div class="state">Finding the latest completed session…</div></div></section>
@@ -1108,6 +1129,75 @@ function renderBriefing(){
  }
  loadBriefingFeatures();
 }
+// Open-Meteo non-commercial forecast: locate the circuit, then sample hourly weather at each session start.
+const briefingWeatherCache=new Map();
+function briefingWeatherCode(code){
+ const c=Number(code);
+ if(c===0)return ["☀️","Clear sky"];
+ if(c===1)return ["🌤️","Mainly clear"];
+ if(c===2)return ["⛅","Partly cloudy"];
+ if(c===3)return ["☁️","Overcast"];
+ if([45,48].includes(c))return ["🌫️","Fog"];
+ if([51,53,55,56,57].includes(c))return ["🌦️","Drizzle"];
+ if([61,63,65,66,67].includes(c))return ["🌧️","Rain"];
+ if([71,73,75,77,85,86].includes(c))return ["🌨️","Snow"];
+ if([80,81,82].includes(c))return ["🌦️","Rain showers"];
+ if([95,96,99].includes(c))return ["⛈️","Thunderstorm"];
+ return ["🌡️","Conditions unavailable"];
+}
+function briefingWeatherTime(ms){
+ return new Date(ms).toLocaleString(undefined,{weekday:"short",hour:"numeric",minute:"2-digit"});
+}
+async function loadWeekendForecast(meeting){
+ const box=$("briefingWeather");
+ if(!box||!meeting)return;
+ const key=String(meeting.meeting_key||meeting.meeting_name||meeting.location||"");
+ box.innerHTML='<div class="state">Finding the circuit forecast…</div>';
+ try{
+  if(briefingWeatherCache.has(key)){box.innerHTML=briefingWeatherCache.get(key);return}
+  const location=String(meeting.location||"").trim();
+  if(!location)throw new Error("Circuit location is unavailable");
+  const geoUrl="https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(location)+"&count=10&language=en&format=json";
+  const geoResponse=await fetch(geoUrl);
+  if(!geoResponse.ok)throw new Error("Circuit geocoding failed");
+  const geo=await geoResponse.json();
+  const results=geo.results||[];
+  const country=String(meeting.country_name||"").toLowerCase();
+  const place=results.find(x=>String(x.country||"").toLowerCase()===country)||results[0];
+  if(!place)throw new Error("Could not locate this circuit");
+  const sessionData=await get("/sessions?meeting_key="+encodeURIComponent(meeting.meeting_key));
+  const sessions=(sessionData||[]).filter(s=>s.date_start&&s.session_name&&!s.is_cancelled).sort((a,b)=>new Date(a.date_start)-new Date(b.date_start));
+  if(!sessions.length)throw new Error("Session times are not available");
+  const url="https://api.open-meteo.com/v1/forecast?latitude="+encodeURIComponent(place.latitude)+"&longitude="+encodeURIComponent(place.longitude)+"&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m&temperature_unit=celsius&wind_speed_unit=kmh&precipitation_unit=mm&timezone=UTC&forecast_days=16";
+  const response=await fetch(url);
+  if(!response.ok)throw new Error("Forecast provider is temporarily unavailable");
+  const forecast=await response.json(),hourly=forecast.hourly||{},times=hourly.time||[];
+  if(!times.length)throw new Error("No hourly forecast data returned");
+  const now=Date.now(),end=now+16*24*60*60*1000;
+  const upcoming=sessions.filter(s=>new Date(s.date_start).getTime()>=now-60*60*1000&&new Date(s.date_start).getTime()<=end);
+  const nextStart=upcoming.reduce((min,s)=>Math.min(min,new Date(s.date_start).getTime()),Infinity);
+  const rows=upcoming.map(s=>{
+   const start=new Date(s.date_start).getTime();
+   let idx=-1,best=Infinity;
+   times.forEach((t,i)=>{const tm=new Date(t+"Z").getTime(),d=Math.abs(tm-start);if(d<best){best=d;idx=i}});
+   if(idx<0||best>90*60*1000)return "";
+   const val=k=>hourly[k]?.[idx];
+   const [icon,condition]=briefingWeatherCode(val("weather_code"));
+   const temp=Number(val("temperature_2m")),rain=Number(val("precipitation_probability")),mm=Number(val("precipitation")),wind=Number(val("wind_speed_10m")),gust=Number(val("wind_gusts_10m"));
+   const isNext=Math.abs(start-nextStart)<1000;
+   return '<article class="briefing-weather-session '+(isNext?'next':'')+'"><h4>'+esc(s.session_name)+'</h4><p class="bws-time">'+esc(briefingWeatherTime(start))+'</p><div class="briefing-weather-main"><span class="briefing-weather-icon">'+icon+'</span><div><div class="briefing-weather-temp">'+(Number.isFinite(temp)?Math.round(temp)+'°':'—')+'</div><p class="briefing-weather-condition">'+esc(condition)+'</p></div></div><div class="briefing-weather-stats"><span>Rain chance <b>'+(Number.isFinite(rain)?Math.round(rain)+'%':'—')+'</b></span><span>Rainfall <b>'+(Number.isFinite(mm)?mm.toFixed(1)+' mm':'—')+'</b></span><span>Wind <b>'+(Number.isFinite(wind)?Math.round(wind)+' km/h':'—')+'</b></span><span>Gusts <b>'+(Number.isFinite(gust)?Math.round(gust)+' km/h':'—')+'</b></span></div></article>';
+  }).filter(Boolean);
+  let html='<div class="briefing-weather-head"><div><p class="briefing-lead">'+esc(meeting.meeting_name||"Grand Prix")+'</p><p class="briefing-weather-track">'+esc(place.name||meeting.location||"Circuit")+', '+esc(place.country||meeting.country_name||"")+'</p></div><div class="briefing-weather-updated">Checked '+esc(new Date().toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}))+'</div></div>';
+  if(rows.length){
+   html+='<div class="briefing-weather-grid">'+rows.join("")+'</div><p class="briefing-weather-foot">Forecast sampled at each session start; conditions can change. Forecasts are limited to the next 16 days and may not be available for every session. <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
+  }else{
+   html+='<p>No upcoming session falls within the current forecast window. Check back when the weekend is closer.</p><p class="briefing-weather-foot"><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
+  }
+  briefingWeatherCache.set(key,html);box.innerHTML=html;
+ }catch(e){
+  box.innerHTML='<p class="briefing-lead">Forecast unavailable right now</p><p>Redline could not match the circuit to an hourly forecast. Try refreshing later.</p><p class="briefing-weather-foot">Forecasts are limited to the next 16 days. <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
+ }
+}
 let briefingFeaturesBusy=false,briefingFeaturesLoaded="";
 async function loadBriefingFeatures(force=false){
  const spotlight=$("briefingSpotlight"),champ=$("briefingChampionship"),circuit=$("briefingCircuit");
@@ -1157,6 +1247,7 @@ async function loadBriefingFeatures(force=false){
     const now=Date.now(),ordered=meetings.filter(m=>m.date_start).sort((a,b)=>new Date(a.date_start)-new Date(b.date_start));
     const meeting=ordered.find(m=>new Date(m.date_end||m.date_start).getTime()>=now)||ordered[ordered.length-1];
     const next=meeting.date_start&&new Date(meeting.date_start).getTime()>now;
+    loadWeekendForecast(meeting);
     circuit.innerHTML='<p class="briefing-recap-foot">'+(next?'Next scheduled venue':'Most recent venue')+' · '+esc(meeting.meeting_name||"Grand Prix")+'</p>'+circuitGuideHTML(meeting)+'<button type="button" class="briefing-result-link" data-hub-tab="cal">Explore race calendar →</button>';
    }catch(e){circuit.innerHTML='<p class="briefing-lead">Circuit guide unavailable</p><p>Track details will appear when the season calendar can be loaded.</p><button type="button" class="briefing-result-link" data-hub-tab="cal">Open calendar →</button>'}
   })();
