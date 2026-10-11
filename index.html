@@ -159,6 +159,7 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
 .stats-record-rank{color:var(--mute);font:500 10px "IBM Plex Mono",monospace}
 .stats-record-driver{font-weight:600;min-width:0;overflow-wrap:anywhere;line-height:1.3}
 .stats-record-stat{font:600 11px "IBM Plex Mono",monospace;white-space:nowrap}
+.stats-record-more{justify-self:start;margin-top:9px;padding:0;border:0;background:none;color:var(--mute);font:600 10px Inter;cursor:pointer;text-decoration:underline;text-underline-offset:3px}.stats-record-more:hover{color:var(--txt)}
 .stats-record-row:first-child .stats-record-rank{color:var(--txt)}
 @media(max-width:600px){.stats-record-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.stats-record{padding:12px}.stats-record-value{font-size:23px}.stats-record-leader{font-size:12px}.stats-record-row{grid-template-columns:16px minmax(0,1fr) auto;gap:5px}.stats-record-driver{font-size:10px}.stats-record-stat{font-size:10px}}
 @media(max-width:600px){.stats-head{align-items:stretch;flex-direction:column;gap:12px;padding:18px 14px 14px}.stats-head>div{min-width:0}.stats-head h2{font-size:clamp(25px,7vw,30px);line-height:1.12}.stats-season{width:100%;justify-content:space-between}.stats-season select{flex:1;min-width:0}.stats-pair{gap:8px}.stats-driver{padding:10px}.stats-lower{grid-template-columns:1fr}.stats-body{padding:0 12px 14px}.stats-subnav{gap:7px;padding:0 12px 14px;scroll-snap-type:x proximity}.stats-subnav button{flex:0 0 auto;padding:10px 13px;font-size:12px;scroll-snap-align:start}.stats-verdict{padding:13px}.stats-dual{gap:7px}}
@@ -1355,7 +1356,7 @@ async function livePoll(){
 }
 
 /* ---------- Driver Stats / offline-friendly head-to-head ---------- */
-const statsState={year:nowY,view:"head",data:null,loading:false,offline:false,cacheKey:y=>"redline-driver-stats-v1-"+y};
+const statsState={year:nowY,view:"head",data:null,loading:false,offline:false,showAllPoles:false,cacheKey:y=>"redline-driver-stats-v1-"+y};
 function statsEsc(v){return esc(v)}
 function statsNum(v){if(v===null||v===undefined||v==="")return null;const n=Number(v);return Number.isFinite(n)?n:null}
 function statsDriverId(d){return d?.Driver?.driverId||d?.driverId||""}
@@ -1439,15 +1440,17 @@ function renderDriverStats(){
    if(!rows.length)return `<article class="stats-record"><div class="stats-record-label">${label}</div><div class="stats-record-value">—</div><div class="stats-record-leader">${key==="poles"?"No recorded pole positions":"No data available"}</div><div class="stats-record-foot">${key==="poles"?"Only drivers with at least one pole are listed":"Waiting for season results"}</div></article>`;
    const cutoff=rows[Math.min(2,rows.length-1)].value;
    const ranked=rows.filter(x=>lowerBetter?x.value<=cutoff:x.value>=cutoff);
+   const poleRows=key==="poles"?(statsState.showAllPoles?rows:rows.slice(0,2)):ranked;
    const best=rows[0].value;
    const value=key.startsWith("avg")?best.toFixed(1):String(best);
-   return `<article class="stats-record"><div class="stats-record-label">${label}</div><div class="stats-record-value">${value}<span style="font:500 10px Inter;color:var(--mute);letter-spacing:0"> ${key.startsWith("avg")?"AVG":""}</span></div><div class="stats-record-ranking">${ranked.map((x,i)=>`<div class="stats-record-row"><span class="stats-record-rank">${i+1}</span><span class="stats-record-driver">${statsEsc(x.d.name)}</span><span class="stats-record-stat">${key.startsWith("avg")?x.value.toFixed(1):x.value}</span></div>`).join("")}</div><div class="stats-record-foot">${ranked.length>3?"Top three · ties included":lowerBetter?"Lower is better":"Season total"}${unit?" · "+unit:""}</div></article>`;
+   return `<article class="stats-record"><div class="stats-record-label">${label}</div><div class="stats-record-value">${value}<span style="font:500 10px Inter;color:var(--mute);letter-spacing:0"> ${key.startsWith("avg")?"AVG":""}</span></div><div class="stats-record-ranking">${poleRows.map((x,i)=>`<div class="stats-record-row"><span class="stats-record-rank">${i+1}</span><span class="stats-record-driver">${statsEsc(x.d.name)}</span><span class="stats-record-stat">${key.startsWith("avg")?x.value.toFixed(1):x.value}</span></div>`).join("")}</div>${key==="poles"&&rows.length>2?`<button type="button" class="stats-record-more" data-poles-more>${statsState.showAllPoles?"Show less":`Show more (${rows.length-2})`}</button>`:""}<div class="stats-record-foot">${ranked.length>3?"Top three · ties included":lowerBetter?"Lower is better":"Season total"}${unit?" · "+unit:""}</div></article>`;
   }).join("")+'</div><p class="stats-note">All drivers use the same ranking rules. Average positions are calculated from recorded qualifying sessions or classified race finishes; missing data is excluded rather than counted as zero. Current-season records may change as more results become available.</p>';
  }else{
   html+=`<h3 class="stats-section-title">Points progression by round</h3><div class="stats-side"><div class="stats-takeaway"><span style="color:#FF1E00">●</span><b>${statsEsc(a.name)}</b><span>${a.points??"—"} pts</span><span style="color:#3987E8">●</span><b>${statsEsc(b.name)}</b><span>${b.points??"—"} pts</span></div>${statsTrendSVG(a,b)}</div><p class="stats-note">Cumulative points are calculated from race results available in the selected season. Missing rounds may affect the trend.</p>`;
  }
  html+='</div>';root.innerHTML=html;
  root.querySelectorAll("[data-driver-select]").forEach(sel=>sel.onchange=()=>{const side=sel.dataset.driverSelect;statsState[side]=sel.value;renderDriverStats()});
+  root.querySelectorAll("[data-poles-more]").forEach(btn=>btn.onclick=()=>{statsState.showAllPoles=!statsState.showAllPoles;renderDriverStats()});
 }
 async function loadDriverStats(force=false){
  const y=Number($("statsYear")?.value||statsState.year||nowY);statsState.year=y;
@@ -1479,7 +1482,7 @@ async function loadDriverStats(force=false){
 function initDriverStats(){
  const sel=$("statsYear");if(!sel)return;
  if(!sel.options.length){for(let y=nowY;y>=1950;y--)sel.insertAdjacentHTML("beforeend",`<option value="${y}">${y}</option>`)}
- sel.value=String(statsState.year);sel.onchange=()=>{statsState.a=null;statsState.b=null;statsState.data=null;statsState.offline=false;loadDriverStats(true)};
+ sel.value=String(statsState.year);sel.onchange=()=>{statsState.a=null;statsState.b=null;statsState.data=null;statsState.offline=false;statsState.showAllPoles=false;loadDriverStats(true)};
  document.querySelectorAll("[data-stats-view]").forEach(btn=>btn.onclick=()=>{statsState.view=btn.dataset.statsView;document.querySelectorAll("[data-stats-view]").forEach(x=>x.setAttribute("aria-selected",String(x===btn)));renderDriverStats()});
 }
 initDriverStats();
