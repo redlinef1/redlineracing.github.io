@@ -1270,41 +1270,37 @@ async function loadBriefingRecap(force=false){
  briefingRecapBusy=true;briefingRecapKey=String(y);
  box.innerHTML='<div class="state">Checking the latest completed Grand Prix…</div>';
  try{
-  // Use OpenF1's session list to identify the latest actual Grand Prix, then request its classification.
-  // Do not use a season-wide cached results list: stale archives can stop at an old race (e.g. Canada).
-  const liveJson=async path=>{const r=await fetch(API+path,{cache:"no-store",headers:{Accept:"application/json"}});if(!r.ok)throw new Error("Live timing API returned "+r.status);const v=await r.json();if(!Array.isArray(v))throw new Error("Unexpected live timing response");return v};
-  const sessions=await liveJson("/sessions?year="+y+"&session_name=Race");
-  // Session records may omit the human-readable event name; join the meeting metadata by meeting_key.
-  let meetings=[];try{meetings=await liveJson("/meetings?year="+y)}catch(e){}
-  const meetingByKey=Object.fromEntries(meetings.map(m=>[String(m.meeting_key),m]));
-  const now=Date.now();
-  const races=sessions.filter(s=>String(s.session_name||"").toLowerCase()==="race"&&!s.is_cancelled&&s.date_start&&s.date_end&&new Date(s.date_end).getTime()<=now&&s.session_key).sort((a,b)=>new Date(b.date_start)-new Date(a.date_start));
-  if(!races.length)throw new Error("No completed Grand Prix session found");
-  // Only recap the newest completed Grand Prix. Never fall back to an older race,
-  // because that makes the headline appear to change as the provider publishes data.
-  const race=races[0];
-  let res=[],drivers=[];
-  try{res=await liveJson("/session_result?session_key="+encodeURIComponent(race.session_key))}catch(e){}
-  res=res.filter(v=>v&&v.position!==null&&v.position!==undefined&&Number.isFinite(Number(v.position)))
-       .sort((a,b)=>Number(a.position)-Number(b.position));
-  if(!res.length||!res.some(v=>Number(v.position)===1))throw new Error("Latest Grand Prix classification is not available yet");
-  try{drivers=await liveJson("/drivers?session_key="+encodeURIComponent(race.session_key))}catch(e){}
-  const byNo=Object.fromEntries(drivers.map(d=>[String(d.driver_number),d]));
-  const driverName=v=>{const d=byNo[String(v.driver_number)]||{};return d.full_name||[d.first_name,d.last_name].filter(Boolean).join(" ")||("Driver #"+v.driver_number)};
-  const winner=res.find(v=>Number(v.position)===1)||res[0],second=res.find(v=>Number(v.position)===2),third=res.find(v=>Number(v.position)===3);
-  const winnerName=driverName(winner),team=(byNo[String(winner.driver_number)]||{}).team_name||"";
-  const meeting=meetingByKey[String(race.meeting_key)]||{};
-  const gp=meeting.meeting_name||race.meeting_name||(race.country_name?race.country_name+" Grand Prix":"Grand Prix"),date=new Date(race.date_start);
+  // Current-season OpenF1 session-result data may require authentication.
+  // Use Jolpica-F1's public race-results feed, and verify the latest completed
+  // scheduled round first so an older result is never presented as current.
+  const scheduled=await jolpicaRounds(y),now=Date.now();
+  const completed=scheduled.filter(r=>r.date_end&&new Date(r.date_end).getTime()<=now)
+   .sort((a,b)=>new Date(b.date_end)-new Date(a.date_end));
+  if(!completed.length)throw new Error("No completed Grand Prix found in the season schedule");
+  const latest=completed[0],round=Number(latest.jolpicaRound);
+  const data=await jget(`/${y}/results/`);
+  const race=(data.RaceTable?.Races||[]).find(r=>Number(r.round)===round&&(r.Results||[]).length);
+  if(!race)throw new Error("The latest completed Grand Prix result is not published yet");
+  const res=(race.Results||[]).slice().sort((a,b)=>Number(a.position)-Number(b.position));
+  const winner=res.find(v=>Number(v.position)===1);
+  if(!winner)throw new Error("The latest Grand Prix classification has no confirmed winner");
+  const driverName=v=>[v.Driver?.givenName,v.Driver?.familyName].filter(Boolean).join(" ")||v.Driver?.driverId||"Driver";
+  const team=winner.Constructor?.name||"",gp=race.raceName||latest.meeting_name||"Grand Prix";
+  const date=jdate({date:race.date})||new Date(race.date+"T12:00:00Z");
+  const second=res.find(v=>Number(v.position)===2),third=res.find(v=>Number(v.position)===3);
   const podium=[winner,second,third].filter(Boolean);
-  const podiumLine=podium.map((v,i)=>{const d=byNo[String(v.driver_number)]||{};const status=v.dsq?"DSQ":v.dns?"DNS":v.dnf?"DNF":(typeof v.duration==="number"?fmtTime(v.duration):typeof v.gap_to_leader==="number"?(v.position===1?fmtTime(v.duration):"+"+v.gap_to_leader.toFixed(3)+"s"):"—");return '<div class="briefing-podium-row"><span class="briefing-podium-pos">'+(v.position||i+1)+'</span><span class="briefing-podium-name">'+esc(driverName(v))+'<small>'+esc(d.team_name||"")+'</small></span><b>'+esc(status)+'</b></div>'}).join("");
-  const margin=second&&typeof second.gap_to_leader==="number"&&second.gap_to_leader>0?second.gap_to_leader:null;
-  const verdict=margin!==null
-   ? winnerName+" takes the win"+(team?" for "+team:"")+", beating "+driverName(second)+" by "+margin.toFixed(3)+" seconds. That winning margin is the key number from this result."
-   : winnerName+" takes P1"+(team?" for "+team:"")+" in the "+gp+". The returned classification does not provide a reliable gap to P2, so Redline won't label the win dominant or close without evidence.";
-  box.innerHTML='<div class="briefing-recap-top"><div><div class="briefing-statusline"><span class="briefing-live-dot"></span><span>RESULT AVAILABLE</span></div><p class="briefing-lead">'+esc(gp)+'</p><p>'+date.toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})+' · Winner: <strong>'+esc(winnerName)+'</strong>'+(team?" · "+esc(team):"")+'</p></div><span class="briefing-recap-points">'+(winner.points?esc(winner.points)+" pts":"")+'</span></div><div class="briefing-verdict"><p class="briefing-verdict-kicker">THE VERDICT</p><p class="briefing-recap-summary">'+esc(verdict)+'</p></div><p class="briefing-podium-label">PODIUM</p><div class="briefing-podium">'+podiumLine+'</div><p class="briefing-recap-foot">Based on OpenF1 classification data. Official classifications may change after penalties or reviews; the verdict only describes what the available result data supports.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">View official F1 results ↗</a>';
+  const podiumLine=podium.map((v,i)=>{
+   const status=v.Time?.time||v.status||"—";
+   return '<div class="briefing-podium-row"><span class="briefing-podium-pos">'+esc(v.position||i+1)+'</span><span class="briefing-podium-name">'+esc(driverName(v))+'<small>'+esc(v.Constructor?.name||"")+'</small></span><b>'+esc(status)+'</b></div>';
+  }).join("");
+  const gap=second?.Time?.time&&/^\+/.test(second.Time.time)?second.Time.time:null;
+  const verdict=gap
+   ?driverName(winner)+" takes the win"+(team?" for "+team:"")+", beating "+driverName(second)+" by "+gap.replace(/^\+/,"")+". The official result gives us the winning margin."
+   :driverName(winner)+" takes P1"+(team?" for "+team:"")+" in the "+gp+". The published result does not provide a clear time gap to P2, so Redline won't label the win dominant or close without evidence.";
+  box.innerHTML='<div class="briefing-recap-top"><div><div class="briefing-statusline"><span class="briefing-live-dot"></span><span>RESULT AVAILABLE</span></div><p class="briefing-lead">'+esc(gp)+'</p><p>'+date.toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})+' · Winner: <strong>'+esc(driverName(winner))+'</strong>'+(team?" · "+esc(team):"")+'</p></div><span class="briefing-recap-points">'+(winner.points?esc(winner.points)+" pts":"")+'</span></div><div class="briefing-verdict"><p class="briefing-verdict-kicker">THE VERDICT</p><p class="briefing-recap-summary">'+esc(verdict)+'</p></div><p class="briefing-podium-label">PODIUM</p><div class="briefing-podium">'+podiumLine+'</div><p class="briefing-recap-foot">Based on the Jolpica-F1 race-results feed. The recap only appears when the newest completed Grand Prix has a published classification.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">View official F1 results ↗</a>';
   box.dataset.loaded="true";
  }catch(e){
-  box.innerHTML='<p class="briefing-lead">Latest Grand Prix results could not be verified.</p><p>Redline could not confirm the newest race classification, so it will not show an older saved race as if it were current. Refresh in a moment or check the official results page.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">Check official F1 results ↗</a>';
+  box.innerHTML='<p class="briefing-lead">Latest Grand Prix results could not be verified.</p><p>Redline could not confirm the newest completed Grand Prix classification, so it will not show an older race as if it were current. Refresh in a moment or check the official results page.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">Check official F1 results ↗</a>';
   box.dataset.loaded="true";
  }finally{briefingRecapBusy=false}
 }
