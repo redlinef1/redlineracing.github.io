@@ -442,7 +442,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
 }
 
 
-/* Race Centre: original, schedule-led race-weekend guide */
+/* Race Centre: race-weekend intelligence hub */
 .briefing-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;padding:22px 20px 18px;border-bottom:1px solid var(--line);background:linear-gradient(120deg,rgba(255,30,0,.10),transparent 62%)}
 .briefing-head>div{min-width:0}.briefing-kicker{font:600 10px 'Space Grotesk';letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:7px}
 .briefing-head h2{font:700 clamp(26px,4vw,34px)/1.1 'Space Grotesk';letter-spacing:-.035em;color:var(--txt);text-transform:none;border:0;padding:0;margin:0}
@@ -450,7 +450,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
 .briefing-refresh{flex:none;border:1px solid var(--line);border-radius:10px;background:var(--card2);color:var(--txt);padding:10px 13px;font:600 12px 'Space Grotesk';cursor:pointer}
 .briefing-refresh:hover{border-color:var(--red)}.briefing-refresh:disabled{opacity:.6;cursor:wait}
 .briefing-note{padding:10px 20px;border-bottom:1px solid var(--line);color:var(--mute);font-size:11px}
-.briefing-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding:14px}
+.briefing-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding:14px}.briefing-feature-grid{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.briefing-feature-grid>.briefing-card{height:100%}
 .briefing-card{min-width:0;padding:16px;border:1px solid var(--line);border-radius:13px;background:var(--soft)}
 .briefing-card h3{font:600 18px/1.2 'Space Grotesk';margin-bottom:12px;color:var(--txt)}.briefing-wide{grid-column:1/-1}
 .briefing-content{font-size:13px;color:var(--mute);line-height:1.6}.briefing-lead{font:600 20px/1.3 'Space Grotesk';color:var(--txt);margin:8px 0}.briefing-statusline{display:flex;align-items:center;gap:7px;font:600 9px 'Space Grotesk';letter-spacing:.12em;color:var(--mute)}
@@ -461,7 +461,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
 .briefing-disclaimer{padding:0 20px 16px;color:var(--mute);font-size:10px;line-height:1.5}
 
 .briefing-priority{border-color:color-mix(in srgb,var(--red) 35%,var(--line))}.briefing-recap-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.briefing-recap-top .briefing-lead{margin-top:8px}.briefing-recap-points{flex:none;font:600 12px 'Space Grotesk';color:var(--red)}.briefing-verdict{padding:12px 14px;border-left:3px solid var(--red);background:var(--card2);border-radius:0 9px 9px 0;margin:14px 0}.briefing-verdict-kicker,.briefing-podium-label{font:700 9px 'Space Grotesk';letter-spacing:.13em;color:var(--red);margin:0 0 5px}.briefing-recap-summary{color:var(--txt);font-size:13px;line-height:1.65;margin:0}.briefing-podium-label{color:var(--mute);margin:14px 0 0}.briefing-podium{border-top:1px solid var(--line);margin-top:8px}.briefing-podium-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}.briefing-podium-row:last-child{border-bottom:0}.briefing-podium-pos{display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--card2);color:var(--red);font:700 11px 'Space Grotesk';flex:none}.briefing-podium-name{flex:1;color:var(--txt);font:600 12px 'Space Grotesk'}.briefing-podium-name small{display:block;color:var(--mute);font:400 10px inherit;margin-top:3px}.briefing-podium-row>b{font:500 11px 'Space Grotesk';color:var(--mute);text-align:right}.briefing-recap-foot{font-size:10px;color:var(--mute);line-height:1.5;margin:12px 0}.briefing-result-link{display:inline-block;color:var(--txt);font-size:11px;font-weight:600;text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:8px 10px}.briefing-result-link:hover{border-color:var(--red);color:var(--red)}
-@media(max-width:650px){.briefing-head{align-items:stretch;flex-direction:column;padding:18px 14px 14px;gap:13px}.briefing-refresh{align-self:flex-start}.briefing-note{padding:10px 14px}.briefing-grid{grid-template-columns:1fr;padding:10px}.briefing-wide{grid-column:auto}.briefing-card{padding:13px}.briefing-footer{flex-direction:column;padding:15px 14px;gap:12px}.briefing-disclaimer{padding:0 14px 14px}.briefing-session{align-items:flex-start}.briefing-tag{margin-top:2px}}
+@media(max-width:650px){.briefing-feature-grid{grid-template-columns:1fr;grid-column:auto}.briefing-head{align-items:stretch;flex-direction:column;padding:18px 14px 14px;gap:13px}.briefing-refresh{align-self:flex-start}.briefing-note{padding:10px 14px}.briefing-grid{grid-template-columns:1fr;padding:10px}.briefing-wide{grid-column:auto}.briefing-card{padding:13px}.briefing-footer{flex-direction:column;padding:15px 14px;gap:12px}.briefing-disclaimer{padding:0 14px 14px}.briefing-session{align-items:flex-start}.briefing-tag{margin-top:2px}}
 
 </style>
 </head>
@@ -517,8 +517,11 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
   <div class="briefing-grid">
    <section class="briefing-card briefing-wide briefing-priority"><p class="briefing-kicker">RACE REPORT</p><h3>Latest Race Recap</h3><div id="briefingRecap" class="briefing-content"><div class="state">Loading the latest verified race result…</div></div></section>
    <section class="briefing-card"><p class="briefing-kicker">THE SITUATION</p><h3>Weekend status</h3><div id="briefingSummary" class="briefing-content"><div class="state">Checking the schedule…</div></div></section>
-   <section class="briefing-card"><p class="briefing-kicker">COMING UP</p><h3>Upcoming sessions</h3><div id="briefingUpcoming" class="briefing-content"><div class="state">Loading sessions…</div></div></section>
-   <section class="briefing-card briefing-wide"><p class="briefing-kicker">CATCH UP</p><h3>Recently completed sessions</h3><div id="briefingCompleted" class="briefing-content"><div class="state">Loading sessions…</div></div></section>
+   <div class="briefing-feature-grid">
+    <section class="briefing-card"><p class="briefing-kicker">SESSION SPOTLIGHT</p><h3>Latest session</h3><div id="briefingSpotlight" class="briefing-content"><div class="state">Finding the latest completed session…</div></div></section>
+    <section class="briefing-card"><p class="briefing-kicker">CHAMPIONSHIP WATCH</p><h3>The title picture</h3><div id="briefingChampionship" class="briefing-content"><div class="state">Loading championship standings…</div></div></section>
+   </div>
+   <section class="briefing-card briefing-wide"><p class="briefing-kicker">CIRCUIT SPOTLIGHT</p><h3>Know the track</h3><div id="briefingCircuit" class="briefing-content"><div class="state">Loading circuit information…</div></div></section>
   </div>
   <div class="briefing-footer">
    <div><b>Want the official details?</b><p>Follow the primary source for published schedules, results and announcements.</p></div>
@@ -936,32 +939,90 @@ function briefingSessionCard(s,status){
  return `<div class="briefing-session"><div class="briefing-session-main"><b>${esc(label)}</b><small>${esc(race)} · ${esc(time)}</small></div><span class="briefing-tag ${status==="Completed"?"done":status==="In progress"?"live":""}">${esc(status)}</span></div>`;
 }
 function renderBriefing(){
- const summary=$("briefingSummary"),upcomingBox=$("briefingUpcoming"),completedBox=$("briefingCompleted"),note=$("briefingNote");
- if(!summary||!upcomingBox||!completedBox||!note)return;
+ const summary=$("briefingSummary"),note=$("briefingNote");
+ if(!summary||!note)return;
  loadBriefingRecap();
  const now=Date.now(),sessions=(countdownSessions||[]).filter(s=>Number.isFinite(s.start)&&Number.isFinite(s.end)).sort((a,b)=>a.start-b.start);
  const active=sessions.find(s=>s.start<=now&&s.end>now);
- const upcoming=sessions.filter(s=>s.start>now).slice(0,5);
- const completed=sessions.filter(s=>s.end<=now).sort((a,b)=>b.end-a.end).slice(0,5);
+ const upcoming=sessions.filter(s=>s.start>now);
+ const completed=sessions.filter(s=>s.end<=now).sort((a,b)=>b.end-a.end);
  if(!sessions.length){
   summary.innerHTML='<p class="briefing-lead">No verified session schedule is available right now.</p><p>Try refreshing in a moment, or use the official schedule links below.</p>';
-  upcomingBox.innerHTML='<div class="state">Upcoming sessions could not be confirmed.</div>';
-  completedBox.innerHTML='<div class="state">No completed sessions are available in the current schedule data.</div>';
   note.textContent="Schedule unavailable · no third-party news feeds are used in this tab.";
-  return;
- }
- const next=upcoming[0];
- if(active){
-  summary.innerHTML=`<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>SESSION IN PROGRESS</span></div><p class="briefing-lead">${esc(sessionLabel(active))}</p><p>${esc(active.race||"Grand Prix")} is currently scheduled to be on track. ${next?"Next up is "+esc(sessionLabel(next))+".":"No later session appears in the loaded schedule."}</p>`;
- }else if(next){
-  summary.innerHTML=`<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>BETWEEN SESSIONS</span></div><p class="briefing-lead">Next up: ${esc(sessionLabel(next))}</p><p>${esc(next.race||"Grand Prix")} · ${esc(briefingDate(next.start))}.</p><p>Times are displayed in your device's local timezone.</p>`;
  }else{
-  const last=completed[0];
-  summary.innerHTML=`<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>WEEKEND RECAP</span></div><p class="briefing-lead">No upcoming sessions found</p><p>${last?"The latest session in the loaded schedule was "+esc(sessionLabel(last))+" at "+esc(briefingDate(last.start))+".":"The current schedule has no upcoming session."} Check the official schedule for changes.</p>`;
+  const next=upcoming[0];
+  if(active){
+   summary.innerHTML=`<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>SESSION IN PROGRESS</span></div><p class="briefing-lead">${esc(sessionLabel(active))}</p><p>${esc(active.race||"Grand Prix")} is currently scheduled to be on track. ${next?"Next up is "+esc(sessionLabel(next))+".":"No later session appears in the loaded schedule."}</p>`;
+  }else if(next){
+   summary.innerHTML=`<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>BETWEEN SESSIONS</span></div><p class="briefing-lead">Next up: ${esc(sessionLabel(next))}</p><p>${esc(next.race||"Grand Prix")} · ${esc(briefingDate(next.start))}.</p><p>Times are displayed in your device's local timezone.</p>`;
+  }else{
+   const last=completed[0];
+   summary.innerHTML=`<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>WEEKEND RECAP</span></div><p class="briefing-lead">No upcoming sessions found</p><p>${last?"The latest session in the loaded schedule was "+esc(sessionLabel(last))+" at "+esc(briefingDate(last.start))+".":"The current schedule has no upcoming session."} Check the official schedule for changes.</p>`;
+  }
+  note.textContent="Race intelligence · Updated "+new Date().toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})+" · Session times use your local timezone.";
  }
- upcomingBox.innerHTML=upcoming.length?upcoming.map(s=>briefingSessionCard(s,"Upcoming")).join(""):'<div class="state">No further sessions in the currently loaded schedule.</div>';
- completedBox.innerHTML=completed.length?completed.map(s=>briefingSessionCard(s,"Completed")).join(""):'<div class="state">No completed sessions are available in the currently loaded schedule.</div>';
- note.textContent="Schedule data only · Last checked "+new Date().toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})+" · Times shown in local time.";
+ loadBriefingFeatures();
+}
+let briefingFeaturesBusy=false,briefingFeaturesLoaded="";
+async function loadBriefingFeatures(force=false){
+ const spotlight=$("briefingSpotlight"),champ=$("briefingChampionship"),circuit=$("briefingCircuit");
+ if(!spotlight||!champ||!circuit||briefingFeaturesBusy)return;
+ const key=String(nowY);
+ if(!force&&briefingFeaturesLoaded===key&&spotlight.dataset.loaded==="true")return;
+ briefingFeaturesBusy=true;
+ try{
+  const sessionTask=(async()=>{
+   try{
+    const all=await get("/sessions?year="+nowY);
+    const now=Date.now(),done=all.filter(x=>x.session_key&&x.date_end&&new Date(x.date_end).getTime()<=now&&!x.is_cancelled).sort((a,b)=>new Date(b.date_end)-new Date(a.date_end));
+    if(!done.length){spotlight.innerHTML='<p class="briefing-lead">No completed session yet</p><p>Once a session finishes and classification data is published, its leaders will appear here.</p>';return}
+    let session=null,results=[],drivers=[];
+    for(const candidate of done.slice(0,8)){
+     try{const rows=await get("/session_result?session_key="+encodeURIComponent(candidate.session_key));if(rows.length){session=candidate;results=rows.sort((a,b)=>(a.position??999)-(b.position??999));break}}catch(e){}
+     if(!session)session=candidate;
+    }
+    if(!session){spotlight.innerHTML='<p class="briefing-lead">Session data unavailable</p><p>Try refreshing after the next session.</p>';return}
+    try{drivers=await get("/drivers?session_key="+encodeURIComponent(session.session_key))}catch(e){}
+    const by=Object.fromEntries(drivers.map(d=>[String(d.driver_number),d]));
+    if(!results.length){
+     try{
+      const positions=await get("/position?session_key="+encodeURIComponent(session.session_key));
+      const latest={};positions.forEach(p=>{const n=String(p.driver_number);if(!latest[n]||new Date(p.date)>new Date(latest[n].date))latest[n]=p});
+      results=Object.values(latest).sort((a,b)=>(a.position??999)-(b.position??999));
+     }catch(e){}
+    }
+    const name=v=>{const d=by[String(v.driver_number)]||{};return d.full_name||[d.first_name,d.last_name].filter(Boolean).join(" ")||KNOWN[v.driver_number]||("Driver #"+v.driver_number)};
+    const top=results.filter(v=>Number.isFinite(Number(v.position))).slice(0,3);
+    const title=session.session_name||"Completed session";
+    const meeting=session.meeting_name||session.country_name||"Grand Prix weekend";
+    const rows=top.map((v,i)=>`<div class="briefing-podium-row"><span class="briefing-podium-pos">${v.position||i+1}</span><span class="briefing-podium-name">${esc(name(v))}<small>${esc((by[String(v.driver_number)]||{}).team_name||"")}</small></span><b>${typeof v.gap_to_leader==="number"?(Number(v.position)===1?"P1":"+"+v.gap_to_leader.toFixed(3)+"s"):(Number(v.position)===1?"LEADER":"P"+v.position)}</b></div>`).join("");
+    spotlight.innerHTML=`<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>CLASSIFICATION ${top.length?"AVAILABLE":"PENDING"}</span></div><p class="briefing-lead">${esc(title)}</p><p>${esc(meeting)} · ${new Date(session.date_start).toLocaleDateString(undefined,{day:"numeric",month:"short"})}</p>${rows?'<div class="briefing-podium">'+rows+'</div>':'<p>Redline found the session, but a usable classification has not been published by the data provider yet.</p>'}<p class="briefing-recap-foot">Based on the latest available session data. Practice order is not the same as race finishing order.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/${nowY}/races" target="_blank" rel="noopener noreferrer">Official results ↗</a>`;
+   }catch(e){spotlight.innerHTML='<p class="briefing-lead">Session spotlight unavailable</p><p>Redline could not verify the latest session classification. Try refreshing shortly.</p>'}
+   spotlight.dataset.loaded="true";
+  })();
+  const champTask=(async()=>{
+   try{
+    const data=await jget("/"+nowY+"/driverstandings/");
+    const rows=data.StandingsTable?.StandingsLists?.[0]?.DriverStandings||[];
+    if(!rows.length){champ.innerHTML='<p class="briefing-lead">Championship standings not published yet</p><p>Once the season has recorded championship points, the title picture will appear here.</p>';return}
+    const top=rows.slice(0,3),leader=top[0],gap=top[1]?Number(leader.points)-Number(top[1].points):null;
+    champ.innerHTML=`<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>${esc(String(nowY))} DRIVERS\u2019 CHAMPIONSHIP</span></div><p class="briefing-lead">${esc(leader.Driver?.givenName+" "+leader.Driver?.familyName)}</p><p>${esc(leader.points)} points${gap!==null&&Number.isFinite(gap)?' · '+(gap===0?'level with P2':gap+'-point lead over P2'):""}</p><div class="briefing-podium">${top.map((v,i)=>`<div class="briefing-podium-row"><span class="briefing-podium-pos">${i+1}</span><span class="briefing-podium-name">${esc([v.Driver?.givenName,v.Driver?.familyName].filter(Boolean).join(" ")||v.Driver?.driverId||"Driver")}<small>${esc(v.Constructors?.[0]?.name||"")}</small></span><b>${esc(v.points)} pts</b></div>`).join("")}</div><p class="briefing-recap-foot">Standings reflect the latest points table returned by Jolpica-F1.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Explore full standings →</button>`;
+   }catch(e){champ.innerHTML='<p class="briefing-lead">Championship data unavailable</p><p>The full Standings tab may still have historical or cached data.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Open standings →</button>'}
+  })();
+  const circuitTask=(async()=>{
+   try{
+    const meetings=await get("/meetings?year="+nowY);
+    if(!meetings.length)throw new Error("No meetings available");
+    const now=Date.now(),ordered=meetings.filter(m=>m.date_start).sort((a,b)=>new Date(a.date_start)-new Date(b.date_start));
+    const meeting=ordered.find(m=>new Date(m.date_end||m.date_start).getTime()>=now)||ordered[ordered.length-1];
+    const next=meeting.date_start&&new Date(meeting.date_start).getTime()>now;
+    circuit.innerHTML='<p class="briefing-recap-foot">'+(next?'Next scheduled venue':'Most recent venue')+' · '+esc(meeting.meeting_name||"Grand Prix")+'</p>'+circuitGuideHTML(meeting)+'<button type="button" class="briefing-result-link" data-hub-tab="cal">Explore race calendar →</button>';
+   }catch(e){circuit.innerHTML='<p class="briefing-lead">Circuit guide unavailable</p><p>Track details will appear when the season calendar can be loaded.</p><button type="button" class="briefing-result-link" data-hub-tab="cal">Open calendar →</button>'}
+  })();
+  await Promise.all([sessionTask,champTask,circuitTask]);
+  briefingFeaturesLoaded=key;
+  document.querySelectorAll("[data-hub-tab]").forEach(b=>b.onclick=()=>show(b.dataset.hubTab));
+ }finally{briefingFeaturesBusy=false}
 }
 let briefingRecapKey="",briefingRecapBusy=false;
 async function loadBriefingRecap(force=false){
@@ -1013,7 +1074,7 @@ const briefingRefresh=$("briefingRefresh");
 if(briefingRefresh)briefingRefresh.onclick=async()=>{
  briefingRefresh.disabled=true;briefingRefresh.textContent="Refreshing…";
  $("briefingNote").textContent="Checking the latest available schedule…";
- try{await loadCountdownSchedule(nowY);await loadBriefingRecap(true);renderBriefing()}
+ try{await loadCountdownSchedule(nowY);await loadBriefingRecap(true);await loadBriefingFeatures(true);renderBriefing()}
  catch(e){$("briefingNote").textContent="Couldn't refresh the schedule. Existing information may be out of date.";renderBriefing()}
  finally{briefingRefresh.disabled=false;briefingRefresh.textContent="Refresh schedule ↻"}
 };
