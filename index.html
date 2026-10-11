@@ -197,6 +197,7 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
 .driver-directory-info{display:grid;gap:4px;min-width:0;flex:1}.driver-directory-info b{font-size:13px;line-height:1.25;overflow-wrap:anywhere}.driver-directory-info small{font-size:11px;color:var(--mute);overflow-wrap:anywhere}.driver-directory-info>span{font-size:10px;color:var(--mute);font-variant-numeric:tabular-nums}.driver-directory-arrow{color:var(--red);font-size:18px}
 .driver-profile-top{display:flex;align-items:center;gap:16px;padding:8px 0 18px;border-bottom:1px solid var(--line)}.driver-profile-badge .av{width:82px;height:82px;border-radius:14px}.driver-profile-badge .driver-no-text{font-size:35px!important}
 .driver-profile-identity{min-width:0}.driver-profile-identity h3{margin:4px 0;font-size:clamp(23px,5vw,34px);line-height:1.1}.driver-profile-identity p:not(.stats-kicker){margin:0 0 7px;color:var(--mute);font-size:13px}.driver-profile-number{font:600 10px "IBM Plex Mono",monospace;letter-spacing:.08em;color:var(--red)}
+.driver-spotlight{margin:16px 0 18px;padding:15px 16px;border:1px solid var(--line);border-left:3px solid var(--red);border-radius:10px;background:var(--card)}.driver-spotlight .stats-kicker{margin:0 0 7px;color:var(--red);font-size:10px;font-weight:800;letter-spacing:.12em}.driver-spotlight h4{margin:0 0 7px;font-size:16px;line-height:1.25}.driver-spotlight>p:last-child{margin:0;color:var(--mute);font-size:13px;line-height:1.65;max-width:78ch}
 .driver-hub-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:16px 0}.driver-hub-metric{min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:12px}.driver-hub-metric span{display:block;color:var(--mute);font-size:10px;line-height:1.3}.driver-hub-metric b{display:block;margin-top:6px;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .driver-profile-actions{display:flex;align-items:flex-start;justify-content:flex-start;gap:12px;padding:0 0 20px}.driver-profile-actions button{border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:var(--card2);color:var(--txt);font:600 12px Inter;cursor:pointer}.driver-profile-actions label{width:min(240px,58%)}
 .driver-race-list{display:grid;gap:7px}.driver-race-row{display:flex;align-items:center;gap:10px;min-width:0;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--card)}.driver-race-round{flex:0 0 34px;color:var(--red);font:600 11px "IBM Plex Mono",monospace}.driver-race-name{display:grid;gap:3px;min-width:0;flex:1}.driver-race-name b{font-size:12px;overflow-wrap:anywhere}.driver-race-name small{font-size:10px;color:var(--mute);overflow-wrap:anywhere}.driver-race-stats{display:grid;grid-template-columns:auto auto;gap:4px 8px;text-align:right;font-size:10px;color:var(--mute);font-variant-numeric:tabular-nums}.driver-race-stats b{grid-column:1/-1;color:var(--txt);font-size:11px}
@@ -1887,11 +1888,46 @@ function statsDriverCard(d,side,other){
  const color=side==="a"?"#FF1E00":"#3987E8";
  return `<div class="stats-driver ${side}"><div class="stats-kicker" style="color:${color}">DRIVER ${side.toUpperCase()}</div><select class="stats-select" data-driver-select="${side}" aria-label="Select Driver ${side.toUpperCase()}">${statsOptions(d.id,other)}</select><div class="stats-team">${statsEsc(d.team||"Team data unavailable")}</div><div class="stats-points">${d.points===null||d.points===undefined?"—":statsEsc(d.points)}<small>PTS</small></div></div>`;
 }
+function statsDriverSpotlight(d){
+ const name=String(d.name||"").toLowerCase();
+ const profiles=[
+  [/max verstappen|verstappen/,"A relentless racer with a reputation for precision, aggressive commitment and exceptional race pace. Watch how he turns qualifying speed into control over a full Grand Prix."],
+  [/lando norris|norris/,"A naturally quick, attacking driver whose pace over one lap and growing racecraft make every weekend worth following. The key question is how consistently he can convert speed into results."],
+  [/oscar piastri|piastri/,"Cool under pressure and notably composed in wheel-to-wheel battles, he has quickly established himself as a driver to watch. His consistency and decision-making are central to his story."],
+  [/charles leclerc|leclerc/,"A high-speed qualifier with a sharp feel for a single lap, he can make the most of a narrow performance window. His profile is all about turning raw pace into complete race-weekend results."],
+  [/lewis hamilton|hamilton/,"A multiple-time champion whose experience, race management and feel for changing conditions remain defining strengths. His weekends are especially interesting when strategy and tire life become decisive."],
+  [/george russell|russell/,"A precise, technically minded racer who often brings strong qualifying pace and measured execution. His story is about maximizing the package and capitalizing when opportunities appear."],
+  [/fernando alonso|alonso/,"One of the grid’s most experienced racers, known for tactical awareness, defensive craft and finding opportunities others miss. Strategy and race intelligence are always worth watching."],
+  [/carlos sainz|sainz/,"A thoughtful, adaptable racer with a reputation for detailed preparation and strategic awareness. His ability to read a race and build a weekend makes consistency a key theme."],
+  [/alexander albon|albon/,"A smooth and adaptable driver who can be particularly effective at managing tires and extracting performance from difficult weekends. Watch for strong recovery drives and opportunistic points."],
+  [/pierre gasly|gasly/,"A committed qualifier with the ability to deliver standout results when the car and conditions come together. Converting that pace into reliable points is a recurring storyline."],
+  [/esteban ocon|ocon/,"A tough, combative racer who is comfortable in close battles and fights hard for every position. Race execution and making the most of opportunities are central to his profile."],
+  [/kimi antonelli|antonelli|andrea kimi/,"A young talent learning at the highest level, with each weekend offering a fresh measure of speed, composure and adaptation. Progress and consistency are the key things to track."],
+  [/lance stroll|stroll/,"A driver with flashes of strong single-lap pace and experience across varied conditions. The focus is on building complete weekends and converting opportunities into points."],
+  [/oliver bearman|bearman/,"An emerging talent gaining valuable experience against established names. His development, qualifying pace and ability to deliver clean race weekends make him one to keep an eye on."],
+  [/nico hulkenberg|hülkenberg|hulkenberg/,"An experienced and capable qualifier who can deliver when the car is competitive. His ability to make the most of a weekend and seize unexpected opportunities is a key strength."],
+  [/yuki tsunoda|tsunoda/,"An energetic, attacking driver whose speed and willingness to fight make him compelling to follow. Consistency and clean execution are important measures of his progress."],
+  [/isack hadjar|hadjar/,"A young racer building his place on the grid, with every session offering clues about his adaptability and raw pace. Watch how quickly he turns potential into repeatable results."],
+  [/gabriel bortoleto|bortoleto/,"A developing talent facing the challenge of translating junior-category promise into Formula 1 consistency. Qualifying progress and learning across a race weekend are key storylines."],
+  [/liam lawson|lawson/,"An assertive racer who has shown he is willing to fight for position. The focus is on consistency, confidence and maximizing the points available each weekend."],
+  [/valtteri bottas|bottas/,"A seasoned Grand Prix winner with strong qualifying instincts and extensive technical experience. His race pace and ability to help build a competitive weekend remain valuable assets."],
+  [/sergio perez|perez/,"An experienced racer known for tire management and opportunistic racecraft. Strategy, long-run pace and making the most of changing circumstances are worth tracking."]
+ ];
+ const match=profiles.find(([pattern])=>pattern.test(name));
+ const position=Number(d.position),points=Number(d.points);
+ let label="DRIVER SPOTLIGHT";
+ if(Number.isFinite(position)&&position>0&&position<=3)label="TITLE CONTENDER";
+ else if(Number.isFinite(position)&&position>=4&&position<=10)label="POINTS BATTLE";
+ let intro=match?match[1]:`Representing ${d.team||"their team"}, ${d.name||"this driver"} is part of the season’s evolving story. Follow the qualifying pace, race results and points progression below to see how their campaign develops.`;
+ if(Number.isFinite(position)&&position>0&&Number.isFinite(points))intro+=` In the ${d.year||"current"} standings snapshot, ${d.name||"the driver"} sits P${position} on ${points} point${points===1?"":"s"}.`;
+ return {label,intro};
+}
 function statsDriverBadge(d){return driverNoBadge(d.number||"—",statsColor(d.team,0))}
 function statsProfileMarkup(d,data){
  const races=(data.rounds||[]).map(r=>({round:r.round,name:r.name,circuit:r.circuit,result:d.roundResults?.[r.round],qual:d.roundQualifying?.[r.round],points:d.roundPoints?.[r.round]})).filter(r=>r.result||r.qual!==undefined||r.points!==undefined).reverse();
  const metric=(label,value)=>`<article class="driver-hub-metric"><span>${label}</span><b>${value===null||value===undefined||value===""?"—":statsEsc(value)}</b></article>`;
  return `<div class="driver-profile-top"><div class="driver-profile-badge">${statsDriverBadge(d)}</div><div class="driver-profile-identity"><p class="stats-kicker">DRIVER PROFILE · ${data.year}</p><h3>${statsEsc(d.name)}</h3><p>${statsEsc(d.team||"Team not listed")}</p><span class="driver-profile-number">CAR NUMBER ${statsEsc(d.number||"—")}</span></div></div>
+ ${(()=>{const spotlight=statsDriverSpotlight(d);return `<section class="driver-spotlight"><p class="stats-kicker">${spotlight.label}</p><h4>Driver Spotlight</h4><p>${statsEsc(spotlight.intro)}</p></section>`})()}
  <div class="driver-hub-metrics">${metric("Championship position",d.position?("P"+d.position):"—")}${metric("Points",d.points)}${metric("Wins",d.wins)}${metric("Podiums",d.podiums)}${metric("Pole positions",d.poles)}${metric("Fastest laps",d.fastest)}${metric("Avg. qualifying",d.avgQual===null||d.avgQual===undefined?null:d.avgQual.toFixed(1))}${metric("Avg. finish",d.avgFinish===null||d.avgFinish===undefined?null:d.avgFinish.toFixed(1))}</div>
  <div class="driver-profile-actions"><button type="button" data-driver-view="directory">← All drivers</button></div>
  <h3 class="stats-section-title">Season timeline</h3><p class="stats-note">Round-by-round results for ${data.year}. This is season data, not a complete career record.</p>
