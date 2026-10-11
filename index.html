@@ -146,15 +146,15 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
 .stats-empty{padding:22px 16px;text-align:center;color:var(--mute);font-size:13px}
 .stats-trend{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:var(--soft);margin-top:10px}
 .stats-note{font-size:11px;color:var(--mute);margin-top:10px;line-height:1.5}
-.stats-record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.stats-record-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:1fr;align-items:stretch;gap:12px}
 .stats-record{position:relative;display:flex;flex-direction:column;min-width:0;padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--soft);overflow:hidden}
 .stats-record::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red);opacity:.9}
 .stats-record-label{font:600 10px Inter;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);min-height:13px}
-.stats-record-value{font:700 clamp(23px,3vw,31px)/1.1 "IBM Plex Mono",monospace;letter-spacing:-.04em;margin:9px 0 6px;color:var(--txt);overflow-wrap:anywhere}
+.stats-record-value{display:flex;align-items:center;min-height:34px;font:700 clamp(23px,3vw,31px)/1.1 "IBM Plex Mono",monospace;letter-spacing:-.04em;margin:9px 0 6px;color:var(--txt);overflow-wrap:anywhere}
 .stats-record-leader{font-size:13px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
 .stats-record-team{font-size:11px;color:var(--mute);margin-top:4px;line-height:1.4}
-.stats-record-foot{font-size:10px;color:var(--mute);margin-top:10px;padding-top:8px;border-top:1px solid var(--line);line-height:1.4}
-.stats-record-ranking{display:grid;gap:7px;margin-top:10px;flex:1}
+.stats-record-foot{font-size:10px;color:var(--mute);margin-top:auto;padding-top:8px;border-top:1px solid var(--line);line-height:1.4;min-height:31px;display:flex;align-items:flex-start}
+.stats-record-ranking{display:grid;align-content:start;gap:7px;margin-top:10px;min-height:58px}
 .stats-record-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:6px;align-items:center;font-size:11px}
 .stats-record-rank{color:var(--mute);font:500 10px "IBM Plex Mono",monospace}
 .stats-record-driver{font-weight:600;min-width:0;overflow-wrap:anywhere;line-height:1.3}
