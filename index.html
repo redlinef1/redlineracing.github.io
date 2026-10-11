@@ -1273,22 +1273,40 @@ async function loadWeekendForecast(meeting){
    .map(v=>String(v||"").trim()).filter(Boolean)
    .map(v=>v.replace(/\s+(Grand Prix|GP)$/i,""));
   let place=null,lastGeoError=null;
-  for(const searchName of [...new Set(searchNames)]){
-   const query=countryName?searchName+", "+countryName:searchName;
+  const country=countryName.toLowerCase();
+  // Try the country-qualified place first, then the plain name. Some circuit
+  // names are neighborhoods or track names rather than indexed city names.
+  const geoQueries=[...new Set(searchNames.flatMap(name=>countryName?[name+", "+countryName,name]:[name]))];
+  for(const query of geoQueries){
    try{
     const geoUrl="https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(query)+"&count=10&language=en&format=json";
     const geoResponse=await fetch(geoUrl);
     if(!geoResponse.ok)throw new Error("Circuit geocoding returned HTTP "+geoResponse.status);
     const geo=await geoResponse.json(),results=geo.results||[];
-    const country=countryName.toLowerCase();
-    place=results.find(x=>String(x.country||"").toLowerCase()===country)||results[0]||null;
+    const match=results.find(x=>String(x.country||"").toLowerCase()===country);
+    place=match||(query.includes(",")?null:results[0])||null;
     if(place)break;
    }catch(err){lastGeoError=err}
   }
   if(!place)throw new Error(lastGeoError?.message||"Could not locate circuit: "+(searchNames[0]||"unknown location"));
-  const sessionData=await get("/sessions?meeting_key="+encodeURIComponent(meeting.meeting_key));
-  const sessions=(sessionData||[]).filter(s=>s.date_start&&s.session_name&&!s.is_cancelled).sort((a,b)=>new Date(a.date_start)-new Date(b.date_start));
-  if(!sessions.length)throw new Error("Session times are not available");
+  let sessionData=[];
+  try{sessionData=await get("/sessions?meeting_key="+encodeURIComponent(meeting.meeting_key))}catch(e){}
+  let sessions=(sessionData||[]).filter(s=>s.date_start&&s.session_name&&!s.is_cancelled);
+  // If the meeting-key query is incomplete, retry the season schedule and then
+  // use the already-loaded countdown schedule as a final fallback.
+  if(!sessions.length){
+   try{
+    const seasonSessions=await get("/sessions?year="+nowY);
+    sessions=(seasonSessions||[]).filter(s=>String(s.meeting_key)===String(meeting.meeting_key)&&s.date_start&&s.session_name&&!s.is_cancelled);
+   }catch(e){}
+  }
+  if(!sessions.length){
+   const start=meeting.date_start?new Date(meeting.date_start).getTime():NaN;
+   const end=meeting.date_end?new Date(meeting.date_end).getTime():NaN;
+   sessions=(countdownSessions||[]).filter(s=>s.start&&s.name&&Number.isFinite(start)&&Number.isFinite(end)&&s.start>=start-12*60*60*1000&&s.start<=end+12*60*60*1000)
+    .map(s=>({session_name:s.name,date_start:new Date(s.start).toISOString(),date_end:new Date(s.end).toISOString(),meeting_name:s.race}));
+  }
+  sessions=sessions.sort((a,b)=>new Date(a.date_start)-new Date(b.date_start));
   const url="https://api.open-meteo.com/v1/forecast?latitude="+encodeURIComponent(place.latitude)+"&longitude="+encodeURIComponent(place.longitude)+"&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_gusts_10m&temperature_unit=celsius&wind_speed_unit=kmh&precipitation_unit=mm&timezone=UTC&forecast_days=16";
   const response=await fetch(url);
   if(!response.ok)throw new Error("Forecast provider is temporarily unavailable");
@@ -1311,6 +1329,8 @@ async function loadWeekendForecast(meeting){
   let html='<div class="briefing-weather-head"><div><p class="briefing-lead">'+esc(meeting.meeting_name||"Grand Prix")+'</p><p class="briefing-weather-track">'+esc(place.name||meeting.location||"Circuit")+', '+esc(place.country||meeting.country_name||"")+'</p></div><div class="briefing-weather-updated">Checked '+esc(new Date().toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}))+'</div></div>';
   if(rows.length){
    html+='<div class="briefing-weather-grid">'+rows.join("")+'</div><p class="briefing-weather-foot">Forecast sampled at each session start; conditions can change. Forecasts are limited to the next 16 days and may not be available for every session. <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
+  }else if(!sessions.length){
+   html+='<p>Weather data is available, but session times could not be matched for this venue. Check the forecast again closer to the weekend.</p><p class="briefing-weather-foot">Forecasts are limited to the next 16 days. <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
   }else{
    html+='<p>No upcoming session falls within the current forecast window. Check back when the weekend is closer.</p><p class="briefing-weather-foot"><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
   }
