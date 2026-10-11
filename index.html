@@ -966,7 +966,9 @@ function loadRound(i){
  renderLast();$("last").title="Everything on this page is shown as it stood after this race";
  $("resTitle").textContent=`${race.country_name} Grand Prix result`;
  ["drivers","teams","result","control","radioList","lapList","weatherView"].forEach(id=>$(id).innerHTML='<div class="state">Loading…</div>');
- ensure();prefetchAll();
+ // Load only the active tab on startup; other race-data panels fetch when opened.
+ // Eagerly prefetching every panel queued many rate-limited API requests and slowed Home.
+ ensure();
 }
 async function prefetchAll(){
  const t=tok,steps=[()=>{if(!loaded.st){loaded.st=1;return loadStandings()}},()=>{if(!loaded.res){loaded.res=1;return loadResult()}},
