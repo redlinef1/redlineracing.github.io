@@ -1432,10 +1432,37 @@ async function loadBriefingRecap(force=false){
  briefingRecapBusy=true;briefingRecapKey=String(y);
  box.innerHTML='<div class="state">Checking the latest completed Grand Prix…</div>';
  try{
-  // Current-season OpenF1 session-result data may require authentication.
-  // Use Jolpica-F1's public race-results feed, and verify the latest completed
-  // scheduled round first so an older result is never presented as current.
-  const scheduled=await jolpicaRounds(y),now=Date.now();
+  // Prefer OpenF1's current-season race sessions and classification. Jolpica-F1
+  // can lag behind current results, so it is a fallback rather than the first source.
+  const now=Date.now();
+  try{
+   const sessions=await get("/sessions?year="+y);
+   const races=(sessions||[]).filter(x=>x.session_key&&!x.is_cancelled&&/^(race|grand prix)$/i.test(String(x.session_name||"").trim())&&x.date_end&&new Date(x.date_end).getTime()<=now)
+    .sort((a,b)=>new Date(b.date_end)-new Date(a.date_end));
+   if(races.length){
+    const session=races[0],key=encodeURIComponent(session.session_key);
+    let results=[],drivers=[];
+    try{results=await get("/session_result?session_key="+key)}catch(e){}
+    try{drivers=await get("/drivers?session_key="+key)}catch(e){}
+    results=(results||[]).filter(v=>Number.isFinite(Number(v.position))).sort((a,b)=>Number(a.position)-Number(b.position));
+    if(results.length){
+     const by=Object.fromEntries((drivers||[]).map(d=>[String(d.driver_number),d]));
+     const driverName=v=>{const d=by[String(v.driver_number)]||{};return d.full_name||[d.first_name,d.last_name].filter(Boolean).join(" ")||KNOWN[v.driver_number]||("Driver #"+v.driver_number)};
+     const winner=results.find(v=>Number(v.position)===1),second=results.find(v=>Number(v.position)===2),third=results.find(v=>Number(v.position)===3);
+     if(winner){
+      const team=by[String(winner.driver_number)]?.team_name||"",gp=session.meeting_name||session.country_name||"Grand Prix";
+      const podium=[winner,second,third].filter(Boolean);
+      const podiumLine=podium.map((v,i)=>{const d=by[String(v.driver_number)]||{};const status=Number(v.position)===1?"WINNER":typeof v.gap_to_leader==="number"?"+"+v.gap_to_leader.toFixed(3)+"s":(v.dnf?"DNF":v.dns?"DNS":"P"+v.position);return '<div class="briefing-podium-row"><span class="briefing-podium-pos">'+esc(v.position||i+1)+'</span><span class="briefing-podium-name">'+esc(driverName(v))+'<small>'+esc(d.team_name||"")+'</small></span><b>'+esc(status)+'</b></div>'}).join("");
+      const date=new Date(session.date_start);
+      const verdict=second&&typeof second.gap_to_leader==="number"?driverName(winner)+" wins the "+gp+", finishing "+second.gap_to_leader.toFixed(3)+" seconds ahead of "+driverName(second)+".":driverName(winner)+" takes victory in the "+gp+".";
+      briefingRecapBaseHtml='<div class="briefing-recap-top"><div><div class="briefing-statusline"><span class="briefing-live-dot"></span><span>RESULT AVAILABLE</span></div><p class="briefing-lead">'+esc(gp)+'</p><p>'+(!Number.isNaN(+date)?date.toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"}):"")+' · Winner: <strong>'+esc(driverName(winner))+'</strong>'+(team?" · "+esc(team):"")+'</p></div><span class="briefing-recap-points">'+(winner.points?esc(winner.points)+" pts":"")+'</span></div><div class="briefing-verdict"><p class="briefing-verdict-kicker">THE VERDICT</p><p class="briefing-recap-summary">'+esc(verdict)+'</p></div><p class="briefing-podium-label">PODIUM</p><div class="briefing-podium">'+podiumLine+'</div><p class="briefing-recap-foot">Based on the latest completed Grand Prix classification from OpenF1.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">View official F1 results ↗</a>';
+      box.dataset.loaded="true";renderBriefingRecapSessionStatus();return;
+     }
+    }
+   }
+  }catch(e){console.warn("OpenF1 latest race recap unavailable; trying Jolpica-F1",e)}
+  // Fallback: verify the latest completed scheduled round before using Jolpica.
+  const scheduled=await jolpicaRounds(y);
   const completed=scheduled.filter(r=>r.date_end&&new Date(r.date_end).getTime()<=now)
    .sort((a,b)=>new Date(b.date_end)-new Date(a.date_end));
   if(!completed.length)throw new Error("No completed Grand Prix found in the season schedule");
