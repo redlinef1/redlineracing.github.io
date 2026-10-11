@@ -1268,16 +1268,24 @@ async function loadWeekendForecast(meeting){
  box.innerHTML='<div class="state">Finding the circuit forecast…</div>';
  try{
   if(briefingWeatherCache.has(key)){box.innerHTML=briefingWeatherCache.get(key);return}
-  const location=String(meeting.location||"").trim();
-  if(!location)throw new Error("Circuit location is unavailable");
-  const geoUrl="https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(location)+"&count=10&language=en&format=json";
-  const geoResponse=await fetch(geoUrl);
-  if(!geoResponse.ok)throw new Error("Circuit geocoding failed");
-  const geo=await geoResponse.json();
-  const results=geo.results||[];
-  const country=String(meeting.country_name||"").toLowerCase();
-  const place=results.find(x=>String(x.country||"").toLowerCase()===country)||results[0];
-  if(!place)throw new Error("Could not locate this circuit");
+  const countryName=String(meeting.country_name||"").trim();
+  const searchNames=[meeting.location,meeting.circuit_short_name,meeting.meeting_name]
+   .map(v=>String(v||"").trim()).filter(Boolean)
+   .map(v=>v.replace(/\s+(Grand Prix|GP)$/i,""));
+  let place=null,lastGeoError=null;
+  for(const searchName of [...new Set(searchNames)]){
+   const query=countryName?searchName+", "+countryName:searchName;
+   try{
+    const geoUrl="https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(query)+"&count=10&language=en&format=json";
+    const geoResponse=await fetch(geoUrl);
+    if(!geoResponse.ok)throw new Error("Circuit geocoding returned HTTP "+geoResponse.status);
+    const geo=await geoResponse.json(),results=geo.results||[];
+    const country=countryName.toLowerCase();
+    place=results.find(x=>String(x.country||"").toLowerCase()===country)||results[0]||null;
+    if(place)break;
+   }catch(err){lastGeoError=err}
+  }
+  if(!place)throw new Error(lastGeoError?.message||"Could not locate circuit: "+(searchNames[0]||"unknown location"));
   const sessionData=await get("/sessions?meeting_key="+encodeURIComponent(meeting.meeting_key));
   const sessions=(sessionData||[]).filter(s=>s.date_start&&s.session_name&&!s.is_cancelled).sort((a,b)=>new Date(a.date_start)-new Date(b.date_start));
   if(!sessions.length)throw new Error("Session times are not available");
@@ -1308,7 +1316,8 @@ async function loadWeekendForecast(meeting){
   }
   briefingWeatherCache.set(key,html);box.innerHTML=html;
  }catch(e){
-  box.innerHTML='<p class="briefing-lead">Forecast unavailable right now</p><p>Redline could not match the circuit to an hourly forecast. Try refreshing later.</p><p class="briefing-weather-foot">Forecasts are limited to the next 16 days. <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
+  console.warn("Redline Grid forecast error:",e);
+  box.innerHTML='<p class="briefing-lead">Forecast unavailable right now</p><p>Redline could not load the circuit forecast. Try refreshing later.</p><p class="briefing-weather-foot">Forecasts are limited to the next 16 days. <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
  }
 }
 let briefingFeaturesBusy=false,briefingFeaturesLoaded="";
