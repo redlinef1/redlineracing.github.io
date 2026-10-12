@@ -1,4 +1,4 @@
-const CACHE_NAME="redline-shell-v3";
+const CACHE_NAME="redline-shell-v4";
 const CIRCUIT_ASSET_CACHE="redline-circuit-assets-v1";
 const SHELL=["./","./index.html"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()))});
@@ -10,7 +10,7 @@ self.addEventListener("fetch",event=>{
  if(url.hostname==="raw.githubusercontent.com"&&url.pathname.startsWith("/f1db/f1-circuits-svg/")&&req.destination==="image"){
   event.respondWith(caches.open(CIRCUIT_ASSET_CACHE).then(async cache=>{
    const saved=await cache.match(req);
-   const network=fetch(req).then(res=>{if(res.ok||res.type==="opaque")cache.put(req,res.clone());return res}).catch(()=>null);
+   const network=(async()=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);try{const res=await fetch(req,{signal:controller.signal});if(res.ok||res.type==="opaque")cache.put(req,res.clone());return res}catch(e){return null}finally{clearTimeout(timer)}})();
    if(saved){event.waitUntil(network);return saved}
    const fresh=await network;if(fresh)return fresh;return new Response("",{status:503,statusText:"Circuit map unavailable offline"});
   }));
