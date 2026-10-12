@@ -1585,6 +1585,18 @@ async function loadBriefingFeatures(force=false){
    (async()=>{const weather=$("briefingWeather");if(!weather)return;const saved=await archiveRead("weather:last");if(saved?.html&&!weather.querySelector(".briefing-weather-session")){weather.innerHTML=saved.html;const age=Math.max(1,Math.round((Date.now()-(saved.savedAt||Date.now()))/60000));const note=document.createElement("p");note.className="briefing-weather-foot";note.textContent="Offline archive · last saved "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+". Forecast may be outdated.";weather.appendChild(note)}})()
   ]);
   const sessionTask=(async()=>{
+   // Paint a useful archived classification immediately, then let OpenF1 enrich it if available.
+   // The Home card never needs to wait for six telemetry endpoints before showing content.
+   spotlight.dataset.archiveFallback="";
+   try{
+    const archived=await archiveJolpica("/"+nowY+"/results/");
+    const races=(archived?.RaceTable?.Races||[]).filter(r=>r.date&&new Date(r.date+"T23:59:59").getTime()<=Date.now()&&(r.Results||[]).length).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const race=races[0],podium=(race?.Results||[]).slice().sort((a,b)=>Number(a.position)-Number(b.position)).slice(0,3);
+    if(race&&podium.length){
+     spotlight.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>ARCHIVED RACE SNAPSHOT</span></div><p class="briefing-lead">'+esc(race.raceName||"Latest Grand Prix")+'</p><p class="briefing-intel-sub">Verified classification from the bundled season archive. Live lap and tyre details will appear when available.</p><div class="briefing-podium">'+podium.map((v,i)=>'<div class="briefing-podium-row"><span class="briefing-podium-pos">'+(i+1)+'</span><span class="briefing-podium-name">'+esc([v.Driver?.givenName,v.Driver?.familyName].filter(Boolean).join(" ")||v.Driver?.driverId||"Driver")+'<small>'+esc(v.Constructor?.name||"")+'</small></span><b>'+esc(v.points??"—")+' pts</b></div>').join("")+'</div><p class="briefing-recap-foot">Local season archive · no live API required for this snapshot.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+nowY+'/races" target="_blank" rel="noopener noreferrer">Check official race results ↗</a>';
+     spotlight.dataset.loaded="true";spotlight.dataset.archiveFallback="true";await saveHomeCard("race-intel-"+nowY,spotlight);
+    }
+   }catch(archiveError){console.warn("Race Intel archive snapshot unavailable:",archiveError)}
    // Independent UI watchdog: a stalled upstream request must never leave Race Intel on its initial spinner.
    const intelFailSafe=setTimeout(()=>{
     if(!spotlight.dataset.loaded&&/Analysing the latest completed Grand Prix|Loading/.test(spotlight.textContent)){
@@ -1595,7 +1607,7 @@ async function loadBriefingFeatures(force=false){
    try{
     const all=await briefingGet("/sessions?year="+nowY,10000);
     const now=Date.now(),races=all.filter(x=>x.session_key&&x.date_end&&new Date(x.date_end).getTime()<=now&&!x.is_cancelled&&/race/i.test(x.session_name||"")&&!/sprint/i.test(x.session_name||"")).sort((a,b)=>new Date(b.date_end)-new Date(a.date_end));
-    if(!races.length){clearTimeout(intelFailSafe);spotlight.innerHTML='<p class="briefing-lead">No completed Grand Prix to analyse yet</p><p>Race Intel will break down position gains, fastest laps and tyre strategy after the first Grand Prix classification is available.</p>';spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight);return}
+    if(!races.length){clearTimeout(intelFailSafe);if(!spotlight.dataset.archiveFallback){spotlight.innerHTML='<p class="briefing-lead">No completed Grand Prix to analyse yet</p><p>Race Intel will break down position gains, fastest laps and tyre strategy after the first Grand Prix classification is available.</p>';spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight)}return}
     const session=races[0],sk=encodeURIComponent(session.session_key);
     const settled=await Promise.allSettled([briefingGet("/session_result?session_key="+sk,7000),briefingGet("/drivers?session_key="+sk,7000),briefingGet("/starting_grid?session_key="+sk,7000),briefingGet("/laps?session_key="+sk,7000),briefingGet("/stints?session_key="+sk,7000),briefingGet("/pit?session_key="+sk,7000)]);
     const data=settled.map(x=>x.status==="fulfilled"?x.value:[]);
@@ -1622,10 +1634,11 @@ async function loadBriefingFeatures(force=false){
     if(strategies.length){const strat=[...strategies].sort((a,b)=>b.compounds.length-a.compounds.length||b.count-a.count)[0];intel.push(tile("TYRE STRATEGY",esc(name(strat.n)),strat.compounds.length?esc(strat.compounds.join(" → ")):(strat.count+" stints recorded")));}
     if(fastestPit)intel.push(tile("QUICKEST PIT STOP",esc(name(fastestPit.driver_number)),Number(fastestPit.pit_duration).toFixed(2)+'s · Lap '+esc(fastestPit.lap_number??"—")));
     const when=session.date_start?new Date(session.date_start).toLocaleDateString(undefined,{day:"numeric",month:"short"}):"";
+    spotlight.dataset.archiveFallback="";
     spotlight.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>GRAND PRIX DATA · '+esc(when)+'</span></div><p class="briefing-lead">'+esc(session.meeting_name||session.country_name||"Grand Prix")+'</p><p class="briefing-intel-sub">Beyond the podium: the data behind the race.</p>'+(intel.length?'<div class="briefing-intel-grid">'+intel.join("")+'</div>':'<p>Classification is available, but detailed lap, grid or pit-stop data has not been published for this race yet.</p>')+'<p class="briefing-recap-foot">Based on available OpenF1 race data.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+nowY+'/races" target="_blank" rel="noopener noreferrer">Check official race results ↗</a>';
    }catch(e){
     console.warn("Race Intel live data unavailable:",e);
-    const restored=await restoreHomeCard("race-intel-"+nowY,spotlight,"Race Intel");
+    const restored=spotlight.dataset.archiveFallback==="true"||await restoreHomeCard("race-intel-"+nowY,spotlight,"Race Intel");
     if(!restored){
      let localIntel=false;
      try{
