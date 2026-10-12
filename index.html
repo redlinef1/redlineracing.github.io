@@ -1522,6 +1522,12 @@ async function loadBriefingFeatures(force=false){
  if(!force&&briefingFeaturesLoaded===key&&spotlight.dataset.loaded==="true")return;
  briefingFeaturesBusy=true;
  try{
+  // Paint locally saved Home cards before any network request, so offline visits never sit on loading placeholders.
+  await Promise.all([
+   restoreHomeCard("race-intel-"+nowY,spotlight,"Race Intel"),
+   restoreHomeCard("championship-"+nowY,champ,"championship standings"),
+   restoreHomeCard("circuit-"+nowY,circuit,"circuit guide")
+  ]);
   const sessionTask=(async()=>{
    try{
     const all=await get("/sessions?year="+nowY);
