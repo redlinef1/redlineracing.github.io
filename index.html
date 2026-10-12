@@ -1453,6 +1453,7 @@ async function loadWeekendForecast(meeting){
   const note=document.createElement("p");note.className="briefing-weather-foot";note.textContent="Saved forecast · last checked "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+". Updating when connected.";
   box.appendChild(note);
  }else box.innerHTML='<div class="state">Finding the circuit forecast…</div>';
+ const weatherFailSafe=setTimeout(()=>{if(!savedWeather?.html&&!briefingWeatherCache.has(key))box.innerHTML='<p class="briefing-lead">Forecast is taking too long</p><p>Weather providers have not responded yet. Try refreshing later.</p>';},25000);
  try{
   const countryName=String(meeting.country_name||"").trim();
   const searchNames=[meeting.location,meeting.circuit_short_name,meeting.meeting_name]
@@ -1507,6 +1508,7 @@ async function loadWeekendForecast(meeting){
   }
   if(!times.length)throw new Error("No hourly forecast data returned");
   const now=Date.now(),end=now+forecastDays*24*60*60*1000;
+  const upcoming=sessions.filter(s=>new Date(s.date_start).getTime()>=now-60*60*1000&&new Date(s.date_start).getTime()<=end);
   const nextStart=upcoming.reduce((min,s)=>Math.min(min,new Date(s.date_start).getTime()),Infinity);
   const rows=upcoming.map(s=>{
    const start=new Date(s.date_start).getTime();
@@ -1523,13 +1525,13 @@ async function loadWeekendForecast(meeting){
   if(rows.length){
    html+='<div class="briefing-weather-grid">'+rows.join("")+'</div><p class="briefing-weather-foot">Forecast sampled at each session start; conditions can change. Forecasts are limited to the next '+forecastDays+' days and may not be available for every session. <a href="'+(provider==="MET Norway"?"https://api.met.no/":"https://open-meteo.com/")+'" target="_blank" rel="noopener noreferrer">Weather data by '+esc(provider)+'</a>.</p>';
   }else if(!sessions.length){
-   html+='<p>Weather data is available, but session times could not be matched for this venue. Check the forecast again closer to the weekend.</p><p class="briefing-weather-foot">Forecasts are limited to the next 16 days. <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
+   html+='<p>Weather data is available, but session times could not be matched for this venue. Check the forecast again closer to the weekend.</p><p class="briefing-weather-foot">Forecasts are limited to the next '+forecastDays+' days. <a href="'+(provider==="MET Norway"?"https://api.met.no/":"https://open-meteo.com/")+'" target="_blank" rel="noopener noreferrer">Weather data by '+esc(provider)+'</a>.</p>';
   }else{
-   html+='<p>No upcoming session falls within the current forecast window. Check back when the weekend is closer.</p><p class="briefing-weather-foot"><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
+   html+='<p>No upcoming session falls within the current forecast window. Check back when the weekend is closer.</p><p class="briefing-weather-foot"><a href="'+(provider==="MET Norway"?"https://api.met.no/":"https://open-meteo.com/")+'" target="_blank" rel="noopener noreferrer">Weather data by '+esc(provider)+'</a>.</p>';
   }
-  briefingWeatherCache.set(key,html);box.innerHTML=html;await archiveWrite("weather:"+key,{html,savedAt:Date.now(),provider});await archiveWrite("weather:last",{html,key,savedAt:Date.now(),provider});
+  clearTimeout(weatherFailSafe);briefingWeatherCache.set(key,html);box.innerHTML=html;await archiveWrite("weather:"+key,{html,savedAt:Date.now(),provider});await archiveWrite("weather:last",{html,key,savedAt:Date.now(),provider});
  }catch(e){
-  console.warn("Redline Grid forecast error:",e);
+  clearTimeout(weatherFailSafe);console.warn("Redline Grid forecast error:",e);
   if(savedWeather?.html){
    box.innerHTML=savedWeather.html;
    const age=Math.max(1,Math.round((Date.now()-(savedWeather.savedAt||Date.now()))/60000));
