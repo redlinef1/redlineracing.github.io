@@ -1146,11 +1146,13 @@ function strategyPirelliAllocation(meeting,season){
  if(has(/chinese|shanghai/))return {c:["C2","C3","C4"],url:strategyPirelliSources.opening};
  if(has(/japan|suzuka/))return {c:["C1","C2","C3"],url:strategyPirelliSources.opening};
  if(has(/miami|canadian|montreal/))return {c:["C3","C4","C5"],url:strategyPirelliSources.miamiCanada};
- if(has(/monaco|monte carlo|barcelona|catalunya/))return {c:["C2","C3","C4"],url:strategyPirelliSources.monacoBarcelona};
+ if(has(/monaco|monte carlo/))return {c:["C3","C4","C5"],url:strategyPirelliSources.monacoBarcelona};
+ if(has(/barcelona|catalunya/))return {c:["C2","C3","C4"],url:strategyPirelliSources.monacoBarcelona};
  if(has(/madrid|madring|spanish grand prix/))return {c:["C2","C3","C4"],url:strategyPirelliSources.netherlandsItalyMadrid};
  if(has(/austrian|spielberg/))return {c:["C3","C4","C5"],url:strategyPirelliSources.austriaBritain};
  if(has(/british|silverstone|great britain/))return {c:["C1","C2","C3"],url:strategyPirelliSources.austriaBritain};
- if(has(/belgian|spa-francorchamps|hungarian|budapest/))return {c:["C2","C3","C4"],url:strategyPirelliSources.belgiumHungary};
+ if(has(/belgian|spa-francorchamps/))return {c:["C2","C3","C4"],url:strategyPirelliSources.belgiumHungary};
+ if(has(/hungarian|budapest/))return {c:["C3","C4","C5"],url:strategyPirelliSources.belgiumHungary};
  if(has(/dutch|zandvoort|italian|monza/))return {c:has(/italian|monza/)?["C3","C4","C5"]:["C2","C3","C4"],url:strategyPirelliSources.netherlandsItalyMadrid};
  if(has(/azerbaijan|baku|singapore|marina bay/))return {c:["C3","C4","C5"],url:strategyPirelliSources.bakuSepangSingapore};
  if(has(/bahrain|sepang|malaysian/))return {c:["C2","C3","C4"],url:strategyPirelliSources.bakuSepangSingapore};
