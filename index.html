@@ -1611,7 +1611,7 @@ async function loadBriefingFeatures(force=false){
    try{
     const all=await briefingGet("/sessions?year="+nowY,10000);
     const now=Date.now(),races=all.filter(x=>x.session_key&&x.date_end&&new Date(x.date_end).getTime()<=now&&!x.is_cancelled&&/race/i.test(x.session_name||"")&&!/sprint/i.test(x.session_name||"")).sort((a,b)=>new Date(b.date_end)-new Date(a.date_end));
-    if(!races.length){clearTimeout(intelFailSafe);if(!spotlight.dataset.archiveFallback){spotlight.innerHTML='<p class="briefing-lead">No completed Grand Prix to analyse yet</p><p>Race Intel will break down position gains, fastest laps and tyre strategy after the first Grand Prix classification is available.</p>';spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight)}return}
+    if(!races.length){clearTimeout(intelFailSafe);if(!spotlight.dataset.archiveFallback){spotlight.innerHTML='<p class="briefing-lead">No completed Grand Prix to analyse yet</p><p>Race Intel will break down position gains, fastest laps and tyre strategy after the first Grand Prix classification is available.</p>';spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight)}else{const retry=spotlight.querySelector("[data-load-live-intel]");if(retry){retry.disabled=false;retry.textContent="Retry live race analysis →"}}spotlight.dataset.liveLoading="false";return}
     const session=races[0],sk=encodeURIComponent(session.session_key);
     const settled=await Promise.allSettled([briefingGet("/session_result?session_key="+sk,7000),briefingGet("/drivers?session_key="+sk,7000),briefingGet("/starting_grid?session_key="+sk,7000),briefingGet("/laps?session_key="+sk,7000),briefingGet("/stints?session_key="+sk,7000),briefingGet("/pit?session_key="+sk,7000)]);
     const data=settled.map(x=>x.status==="fulfilled"?x.value:[]);
@@ -1658,7 +1658,9 @@ async function loadBriefingFeatures(force=false){
     }
    }
    clearTimeout(intelFailSafe);
-   spotlight.dataset.loaded="true";spotlight.dataset.liveLoading="false";await saveHomeCard("race-intel-"+nowY,spotlight);
+   spotlight.dataset.loaded="true";spotlight.dataset.liveLoading="false";
+   const retryButton=spotlight.querySelector("[data-load-live-intel]");if(retryButton){retryButton.disabled=false;retryButton.textContent="Retry live race analysis →"}
+   await saveHomeCard("race-intel-"+nowY,spotlight);
    document.querySelectorAll("[data-hub-tab]").forEach(b=>b.onclick=()=>show(b.dataset.hubTab));
    };
    if(spotlight.dataset.archiveFallback!=="true"){
