@@ -1453,7 +1453,7 @@ async function loadWeekendForecast(meeting){
   const note=document.createElement("p");note.className="briefing-weather-foot";note.textContent="Saved forecast · last checked "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+". Updating when connected.";
   box.appendChild(note);
  }else box.innerHTML='<div class="state">Finding the circuit forecast…</div>';
- const weatherFailSafe=setTimeout(()=>{if(!savedWeather?.html&&!briefingWeatherCache.has(key))box.innerHTML='<p class="briefing-lead">Forecast is taking too long</p><p>Weather providers have not responded yet. Try refreshing later.</p>';},25000);
+ const weatherFailSafe=setTimeout(()=>{if(!savedWeather?.html&&!briefingWeatherCache.has(key)&&/Finding the circuit forecast|Loading weather/i.test(box.textContent))box.innerHTML='<p class="briefing-lead">Forecast is taking too long</p><p>Weather providers have not responded yet. The rest of Redline Grid remains available; try refreshing later.</p>';},15000);
  try{
   const countryName=String(meeting.country_name||"").trim();
   const searchNames=[meeting.location,meeting.circuit_short_name,meeting.meeting_name]
@@ -1576,10 +1576,17 @@ async function loadBriefingFeatures(force=false){
    (async()=>{const weather=$("briefingWeather");if(!weather)return;const saved=await archiveRead("weather:last");if(saved?.html&&!weather.querySelector(".briefing-weather-session")){weather.innerHTML=saved.html;const age=Math.max(1,Math.round((Date.now()-(saved.savedAt||Date.now()))/60000));const note=document.createElement("p");note.className="briefing-weather-foot";note.textContent="Offline archive · last saved "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+". Forecast may be outdated.";weather.appendChild(note)}})()
   ]);
   const sessionTask=(async()=>{
+   // Independent UI watchdog: a stalled upstream request must never leave Race Intel on its initial spinner.
+   const intelFailSafe=setTimeout(()=>{
+    if(!spotlight.dataset.loaded&&/Analysing the latest completed Grand Prix|Loading/.test(spotlight.textContent)){
+     spotlight.innerHTML='<p class="briefing-lead">Race Intel is taking longer than expected</p><p>Live data has not responded. Try refreshing; saved race information will be used when available.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Open standings instead →</button>';
+     spotlight.dataset.loaded="true";
+    }
+   },20000);
    try{
     const all=await briefingGet("/sessions?year="+nowY,10000);
     const now=Date.now(),races=all.filter(x=>x.session_key&&x.date_end&&new Date(x.date_end).getTime()<=now&&!x.is_cancelled&&/race/i.test(x.session_name||"")&&!/sprint/i.test(x.session_name||"")).sort((a,b)=>new Date(b.date_end)-new Date(a.date_end));
-    if(!races.length){spotlight.innerHTML='<p class="briefing-lead">No completed Grand Prix to analyse yet</p><p>Race Intel will break down position gains, fastest laps and tyre strategy after the first Grand Prix classification is available.</p>';spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight);return}
+    if(!races.length){clearTimeout(intelFailSafe);spotlight.innerHTML='<p class="briefing-lead">No completed Grand Prix to analyse yet</p><p>Race Intel will break down position gains, fastest laps and tyre strategy after the first Grand Prix classification is available.</p>';spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight);return}
     const session=races[0],sk=encodeURIComponent(session.session_key);
     const settled=await Promise.allSettled([briefingGet("/session_result?session_key="+sk,7000),briefingGet("/drivers?session_key="+sk,7000),briefingGet("/starting_grid?session_key="+sk,7000),briefingGet("/laps?session_key="+sk,7000),briefingGet("/stints?session_key="+sk,7000),briefingGet("/pit?session_key="+sk,7000)]);
     const data=settled.map(x=>x.status==="fulfilled"?x.value:[]);
@@ -1608,6 +1615,7 @@ async function loadBriefingFeatures(force=false){
     const when=session.date_start?new Date(session.date_start).toLocaleDateString(undefined,{day:"numeric",month:"short"}):"";
     spotlight.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>GRAND PRIX DATA · '+esc(when)+'</span></div><p class="briefing-lead">'+esc(session.meeting_name||session.country_name||"Grand Prix")+'</p><p class="briefing-intel-sub">Beyond the podium: the data behind the race.</p>'+(intel.length?'<div class="briefing-intel-grid">'+intel.join("")+'</div>':'<p>Classification is available, but detailed lap, grid or pit-stop data has not been published for this race yet.</p>')+'<p class="briefing-recap-foot">Based on available OpenF1 race data.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+nowY+'/races" target="_blank" rel="noopener noreferrer">Check official race results ↗</a>';
    }catch(e){console.warn("Race Intel unavailable:",e);if(!await restoreHomeCard("race-intel-"+nowY,spotlight,"Race Intel"))spotlight.innerHTML='<p class="briefing-lead">Race Intel unavailable right now</p><p>Redline could not load enough verified Grand Prix data. Try refreshing shortly.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Open standings instead →</button>'}
+   clearTimeout(intelFailSafe);
    spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight);
   })();
   const champTask=(async()=>{
