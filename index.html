@@ -1585,8 +1585,8 @@ async function loadBriefingFeatures(force=false){
    (async()=>{const weather=$("briefingWeather");if(!weather)return;const saved=await archiveRead("weather:last");if(saved?.html&&!weather.querySelector(".briefing-weather-session")){weather.innerHTML=saved.html;const age=Math.max(1,Math.round((Date.now()-(saved.savedAt||Date.now()))/60000));const note=document.createElement("p");note.className="briefing-weather-foot";note.textContent="Offline archive · last saved "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+". Forecast may be outdated.";weather.appendChild(note)}})()
   ]);
   const sessionTask=(async()=>{
-   // Paint a useful archived classification immediately, then let OpenF1 enrich it if available.
-   // The Home card never needs to wait for six telemetry endpoints before showing content.
+   // Essential Home content is archive-first. Live telemetry is opt-in so it cannot
+   // compete with the schedule, recap, standings, circuit guide, or weather requests.
    spotlight.dataset.archiveFallback="";
    try{
     const archived=await archiveJolpica("/"+nowY+"/results/");
@@ -1597,6 +1597,10 @@ async function loadBriefingFeatures(force=false){
      spotlight.dataset.loaded="true";spotlight.dataset.archiveFallback="true";await saveHomeCard("race-intel-"+nowY,spotlight);
     }
    }catch(archiveError){console.warn("Race Intel archive snapshot unavailable:",archiveError)}
+   const loadLiveRaceIntel=async()=>{
+    if(spotlight.dataset.liveLoading==="true")return;
+    spotlight.dataset.liveLoading="true";
+    const liveButton=spotlight.querySelector("[data-load-live-intel]");if(liveButton){liveButton.disabled=true;liveButton.textContent="Loading live race analysis…"}
    // Independent UI watchdog: a stalled upstream request must never leave Race Intel on its initial spinner.
    const intelFailSafe=setTimeout(()=>{
     if(!spotlight.dataset.loaded&&/Analysing the latest completed Grand Prix|Loading/.test(spotlight.textContent)){
@@ -1654,7 +1658,17 @@ async function loadBriefingFeatures(force=false){
     }
    }
    clearTimeout(intelFailSafe);
-   spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight);
+   spotlight.dataset.loaded="true";spotlight.dataset.liveLoading="false";await saveHomeCard("race-intel-"+nowY,spotlight);
+   document.querySelectorAll("[data-hub-tab]").forEach(b=>b.onclick=()=>show(b.dataset.hubTab));
+   };
+   if(spotlight.dataset.archiveFallback!=="true"){
+    spotlight.innerHTML='<p class="briefing-lead">Race Intel · optional deep dive</p><p>The local season archive keeps this card useful without live requests. Load telemetry only when you want extra detail on position gains, fastest laps, tyre stints and pit stops.</p><button type="button" class="briefing-result-link" data-load-live-intel>Load live race analysis →</button>';
+    spotlight.dataset.loaded="true";
+   }else{
+    const actions=document.createElement("p");actions.innerHTML='<button type="button" class="briefing-result-link" data-load-live-intel>Load live race analysis →</button>';spotlight.appendChild(actions);
+   }
+   const liveButton=spotlight.querySelector("[data-load-live-intel]");if(liveButton)liveButton.addEventListener("click",loadLiveRaceIntel);
+   await saveHomeCard("race-intel-"+nowY,spotlight);
   })();
   const champTask=(async()=>{
    try{
