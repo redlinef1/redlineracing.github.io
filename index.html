@@ -898,6 +898,15 @@ async function archiveRead(key){try{return await new Promise((resolve,reject)=>a
 async function archiveWrite(key,data){try{await new Promise((resolve,reject)=>archiveDb().then(db=>{const tx=db.transaction("responses","readwrite");tx.objectStore("responses").put({data,savedAt:Date.now()},key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)}).catch(reject))}catch(e){}}
 const archiveStamp=()=>{try{return new Date().toLocaleString(undefined,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}catch(e){return "previously saved"}};
 function offlineArchiveNote(source){setNet("OFFLINE ARCHIVE · saved "+source+" data · "+archiveStamp())}
+// Preserve successful Home cards locally so temporary API failures do not erase useful data.
+async function saveHomeCard(key,element){if(element?.innerHTML&&element.dataset.loaded==="true")await archiveWrite("home-card:"+key,{html:element.innerHTML,savedAt:Date.now()})}
+async function restoreHomeCard(key,element,label){
+ if(!element)return false;const saved=await archiveRead("home-card:"+key);if(!saved?.html)return false;
+ element.innerHTML=saved.html;element.dataset.loaded="true";
+ const age=Math.max(1,Math.round((Date.now()-(saved.savedAt||Date.now()))/60000));
+ const note=document.createElement("p");note.className="briefing-recap-foot";note.textContent="Showing saved "+label+" · last refreshed "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+".";
+ element.appendChild(note);offlineArchiveNote("saved Home card");return true;
+}
 function get(p){if(cache.has(p))return cache.get(p);const q=chain.then(async()=>{try{const v=await fetchRetry(p);if(Array.isArray(v)&&v.length)await archiveWrite("openf1:"+p,v);return v}catch(e){const saved=await archiveRead("openf1:"+p);if(Array.isArray(saved)&&saved.length){offlineArchiveNote("OpenF1");return saved}throw e}});
   chain=q.catch(()=>{}).then(()=>sleep(450));cache.set(p,q);q.then(v=>{if(Array.isArray(v)&&v.length===0&&cache.get(p)===q)cache.delete(p)}).catch(()=>{if(cache.get(p)===q)cache.delete(p)});return q}
 const jolpicaCache=new Map(),staticArchiveCache=new Map();
@@ -1532,8 +1541,8 @@ async function loadBriefingFeatures(force=false){
     if(fastestPit)intel.push(tile("QUICKEST PIT STOP",esc(name(fastestPit.driver_number)),Number(fastestPit.pit_duration).toFixed(2)+'s · Lap '+esc(fastestPit.lap_number??"—")));
     const when=session.date_start?new Date(session.date_start).toLocaleDateString(undefined,{day:"numeric",month:"short"}):"";
     spotlight.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>GRAND PRIX DATA · '+esc(when)+'</span></div><p class="briefing-lead">'+esc(session.meeting_name||session.country_name||"Grand Prix")+'</p><p class="briefing-intel-sub">Beyond the podium: the data behind the race.</p>'+(intel.length?'<div class="briefing-intel-grid">'+intel.join("")+'</div>':'<p>Classification is available, but detailed lap, grid or pit-stop data has not been published for this race yet.</p>')+'<p class="briefing-recap-foot">Based on available OpenF1 race data.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+nowY+'/races" target="_blank" rel="noopener noreferrer">Check official race results ↗</a>';
-   }catch(e){console.warn("Race Intel unavailable:",e);spotlight.innerHTML='<p class="briefing-lead">Race Intel unavailable right now</p><p>Redline could not load enough verified Grand Prix data. Try refreshing shortly.</p>'}
-   spotlight.dataset.loaded="true";
+   }catch(e){console.warn("Race Intel unavailable:",e);if(!await restoreHomeCard("race-intel-"+nowY,spotlight,"Race Intel"))spotlight.innerHTML='<p class="briefing-lead">Race Intel unavailable right now</p><p>Redline could not load enough verified Grand Prix data. Try refreshing shortly.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Open standings instead →</button>'}
+   spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight);
   })();
   const champTask=(async()=>{
    try{
@@ -1541,8 +1550,8 @@ async function loadBriefingFeatures(force=false){
     const rows=data.StandingsTable?.StandingsLists?.[0]?.DriverStandings||[];
     if(!rows.length){champ.innerHTML='<p class="briefing-lead">Championship standings not published yet</p><p>Once the season has recorded championship points, the title picture will appear here.</p>';return}
     const top=rows.slice(0,3),leader=top[0],gap=top[1]?Number(leader.points)-Number(top[1].points):null;
-    champ.innerHTML=`<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>${esc(String(nowY))} DRIVERS\u2019 CHAMPIONSHIP</span></div><p class="briefing-lead">${esc(leader.Driver?.givenName+" "+leader.Driver?.familyName)}</p><p>${esc(leader.points)} points${gap!==null&&Number.isFinite(gap)?' · '+(gap===0?'level with P2':gap+'-point lead over P2'):""}</p><div class="briefing-podium">${top.map((v,i)=>`<div class="briefing-podium-row"><span class="briefing-podium-pos">${i+1}</span><span class="briefing-podium-name">${esc([v.Driver?.givenName,v.Driver?.familyName].filter(Boolean).join(" ")||v.Driver?.driverId||"Driver")}<small>${esc(v.Constructors?.[0]?.name||"")}</small></span><b>${esc(v.points)} pts</b></div>`).join("")}</div><p class="briefing-recap-foot">Standings reflect the latest points table returned by Jolpica-F1.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Explore full standings →</button>`;
-   }catch(e){champ.innerHTML='<p class="briefing-lead">Championship data unavailable</p><p>The full Standings tab may still have historical or cached data.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Open standings →</button>'}
+    champ.innerHTML=`<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>${esc(String(nowY))} DRIVERS\u2019 CHAMPIONSHIP</span></div><p class="briefing-lead">${esc(leader.Driver?.givenName+" "+leader.Driver?.familyName)}</p><p>${esc(leader.points)} points${gap!==null&&Number.isFinite(gap)?' · '+(gap===0?'level with P2':gap+'-point lead over P2'):""}</p><div class="briefing-podium">${top.map((v,i)=>`<div class="briefing-podium-row"><span class="briefing-podium-pos">${i+1}</span><span class="briefing-podium-name">${esc([v.Driver?.givenName,v.Driver?.familyName].filter(Boolean).join(" ")||v.Driver?.driverId||"Driver")}<small>${esc(v.Constructors?.[0]?.name||"")}</small></span><b>${esc(v.points)} pts</b></div>`).join("")}</div><p class="briefing-recap-foot">Standings reflect the latest points table returned by Jolpica-F1.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Explore full standings →</button>`;champ.dataset.loaded="true";await saveHomeCard("championship-"+nowY,champ);
+   }catch(e){if(!await restoreHomeCard("championship-"+nowY,champ,"championship standings"))champ.innerHTML='<p class="briefing-lead">Championship data unavailable</p><p>The full Standings tab may still have historical or cached data.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Open standings →</button>'}
   })();
   const circuitTask=(async()=>{
    try{
@@ -1555,10 +1564,10 @@ async function loadBriefingFeatures(force=false){
     const meeting=ordered.find(m=>new Date(m.date_end||m.date_start).getTime()>=now)||ordered[ordered.length-1];
     const next=meeting.date_start&&new Date(meeting.date_start).getTime()>now;
     circuit.innerHTML='<p class="briefing-recap-foot">'+(next?'Next scheduled venue':'Most recent venue')+' · '+esc(meeting.meeting_name||"Grand Prix")+'</p>'+circuitGuideHTML(meeting)+circuitStoryHTML(meeting)+'<button type="button" class="briefing-result-link" data-hub-tab="cal">Explore race calendar →</button>';
-    loadCircuitStory(meeting);
+    circuit.dataset.loaded="true";await saveHomeCard("circuit-"+nowY,circuit);loadCircuitStory(meeting);
     // Weather is secondary: render the circuit guide first, then load the forecast without blocking the card.
     loadWeekendForecast(meeting);
-   }catch(e){circuit.innerHTML='<p class="briefing-lead">Circuit guide unavailable</p><p>Track details will appear when the season calendar can be loaded.</p><button type="button" class="briefing-result-link" data-hub-tab="cal">Open calendar →</button>'}
+   }catch(e){if(!await restoreHomeCard("circuit-"+nowY,circuit,"circuit guide"))circuit.innerHTML='<p class="briefing-lead">Circuit guide unavailable</p><p>Track details will appear when the season calendar can be loaded.</p><button type="button" class="briefing-result-link" data-hub-tab="cal">Open calendar →</button>'}
   })();
   await Promise.all([sessionTask,champTask,circuitTask]);
   briefingFeaturesLoaded=key;
