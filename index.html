@@ -265,11 +265,10 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
 .paddock-mark{font:800 11px Inter;letter-spacing:.16em}.paddock-mark span{color:#ef4444}
 .paddock-live{display:flex;align-items:center;gap:7px;color:#c8cbd2;font:600 9px Inter;letter-spacing:.12em}
 .paddock-live i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#70d6a1;box-shadow:0 0 0 3px #70d6a11f}
-.paddock-hero-copy{padding:clamp(26px,4vw,44px) 0 26px;max-width:620px}
-.paddock-hero .documents-kicker{color:#ff6268}
-.paddock-hero h2{font:800 clamp(34px,6vw,58px)/.91 Inter,sans-serif;letter-spacing:-.065em;margin:0 0 15px;color:#fff}
-.paddock-hero h2 em{font-style:normal;color:#ff555c}
-.paddock-hero-copy>p:last-child{max-width:470px;color:#c3c6ce;font-size:13px;line-height:1.65}
+.paddock-hero-copy{padding:clamp(26px,4vw,36px) 0 25px;max-width:620px}
+.paddock-hero .briefing-kicker{color:var(--red)}
+.paddock-hero .paddock-hero-copy h2{font:700 clamp(26px,4vw,34px)/1.1 Inter,sans-serif;letter-spacing:-.035em;margin:0;color:#fff;text-transform:none;border:0;padding:0}
+.paddock-hero-copy .briefing-intro{max-width:590px;color:#c3c6ce;font-size:13px;margin-top:8px;line-height:1.5}
 .paddock-hero-bottom{position:relative;margin:0 -2px;padding:14px 0;border-top:1px solid #ffffff1c}
 .paddock-hero-bottom>div{display:flex;flex-direction:column;gap:5px;min-width:0}
 .paddock-meta-label{color:#9ea3af;font:600 9px Inter;letter-spacing:.13em}
@@ -313,7 +312,7 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
 .paddock-footer p strong{color:var(--txt)}
 .paddock-footer>a{grid-column:2;color:var(--txt);font:700 10px Inter;text-decoration:none}
 @media(max-width:760px){.paddock-categories{grid-template-columns:repeat(2,minmax(0,1fr))}.paddock-hero:before{right:-100px}.paddock-hero:after{width:48%}}
-@media(max-width:520px){.paddock-hero{padding:17px 15px 0}.paddock-hero-copy{padding:28px 0 22px}.paddock-hero h2{font-size:39px}.paddock-hero-copy>p:last-child{font-size:12px}.paddock-hero-bottom{align-items:flex-start;flex-direction:column}.paddock-primary-link{width:100%;justify-content:space-between}.paddock-body{padding:17px 12px 13px}.paddock-section-heading h3{font-size:19px}.paddock-section-note{display:none}.paddock-categories{gap:7px}.paddock-categories button{padding:11px 9px;gap:7px}.paddock-category-icon{flex-basis:24px;height:24px}.paddock-categories b{font-size:10px}.paddock-categories small{font-size:9px}.paddock-category-arrow{display:none}.paddock-latest-heading{margin-top:23px}.paddock-latest-heading .paddock-record-count{font-size:8px}.documents-list{grid-template-columns:minmax(0,1fr);gap:8px}.document-card{padding:13px}.paddock-footer{padding:12px}}
+@media(max-width:520px){.paddock-hero{padding:17px 15px 0}.paddock-hero-copy{padding:28px 0 22px}.paddock-hero .paddock-hero-copy h2{font-size:clamp(26px,4vw,34px)}.paddock-hero-copy .briefing-intro{font-size:12px}.paddock-hero-bottom{align-items:flex-start;flex-direction:column}.paddock-primary-link{width:100%;justify-content:space-between}.paddock-body{padding:17px 12px 13px}.paddock-section-heading h3{font-size:19px}.paddock-section-note{display:none}.paddock-categories{gap:7px}.paddock-categories button{padding:11px 9px;gap:7px}.paddock-category-icon{flex-basis:24px;height:24px}.paddock-categories b{font-size:10px}.paddock-categories small{font-size:9px}.paddock-category-arrow{display:none}.paddock-latest-heading{margin-top:23px}.paddock-latest-heading .paddock-record-count{font-size:8px}.documents-list{grid-template-columns:minmax(0,1fr);gap:8px}.document-card{padding:13px}.paddock-footer{padding:12px}}
 .msg.event-yellow time,.msg.event-red time,.msg.event-green time,.msg.event-blue time{font-weight:700}
 @media(max-width:480px){.msg{margin:6px;padding:10px;grid-template-columns:56px minmax(0,1fr);gap:8px;font-size:12px}.msg time{font-size:11px}.msg .msg-meta{font-size:9px}}
 .state{padding:30px 18px;text-align:center;color:var(--mute)}
@@ -810,7 +809,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
  <section class="panel pane paddock-archive" id="v-documents" hidden>
   <header class="paddock-hero">
    <div class="paddock-hero-top"><span class="paddock-mark">RG<span> / </span>ARCHIVE</span><span class="paddock-live"><i></i> OFFICIAL SOURCES</span></div>
-   <div class="paddock-hero-copy"><p class="documents-kicker">THE REDLINE GRID DOCUMENT ROOM</p><h2>THE PADDOCK<br><em>ARCHIVE</em></h2><p>Every ruling tells a story. Track the decisions, technical checks and official records behind a Grand Prix weekend.</p></div>
+   <div class="paddock-hero-copy"><p class="briefing-kicker">REDLINE GRID / RACE DOCUMENTS</p><h2>Paddock Archive</h2><p class="briefing-intro">Official decisions, technical checks and race-weekend records — all in one place.</p></div>
    <div class="paddock-hero-bottom"><div><span class="paddock-meta-label">RACE DESK CONTEXT</span><strong id="documentsRace">Selected Grand Prix</strong></div><a href="https://www.fia.com/documents/championships/fia-formula-one-world-championship-14/season" target="_blank" rel="noopener noreferrer" class="paddock-primary-link">OPEN FIA ARCHIVE <span>↗</span></a></div>
   </header>
   <div class="paddock-body">
