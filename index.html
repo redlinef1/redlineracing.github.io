@@ -939,7 +939,6 @@ function renderDocuments(){
 }
 $("documentSearch")?.addEventListener("input",renderDocuments);
 $("documentFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-doc-filter]");if(!b)return;documentFilter=b.dataset.docFilter;renderDocuments()});
-renderDocuments();
 
 
 /* ---------- Next-session countdown ---------- */
@@ -1012,6 +1011,7 @@ async function loadYear(y){
 }
 
 let cur=null,loaded={};
+renderDocuments();
 const closeSheet=()=>document.body.classList.remove("sheet");
 $("pick").onclick=()=>document.body.classList.add("sheet");$("scrim").onclick=closeSheet;
 function loadRound(i){
