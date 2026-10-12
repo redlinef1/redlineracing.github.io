@@ -1502,9 +1502,10 @@ async function loadWeekendForecast(meeting){
    const forecast=await response.json();hourly=forecast.hourly||{};times=hourly.time||[];
    if(!times.length)throw new Error("Open-Meteo returned no hourly forecast data");
   }catch(openMeteoError){
-   console.warn("Open-Meteo failed; trying MET Norway:",openMeteoError);
-   const fallback=await fetchMetNorwayForecast(place);
-   hourly=fallback.hourly;provider=fallback.provider;forecastDays=fallback.forecastDays;times=hourly.time||[];
+   // MET Norway blocks direct browser clients under its CORS / identification policy.
+   // Fall through to the saved-forecast path rather than calling a backup the browser cannot reliably access.
+   console.warn("Open-Meteo forecast failed; using saved forecast if available:",openMeteoError);
+   throw openMeteoError;
   }
   if(!times.length)throw new Error("No hourly forecast data returned");
   const now=Date.now(),end=now+forecastDays*24*60*60*1000;
