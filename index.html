@@ -257,27 +257,63 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
  .control-order{display:block;width:100%;min-height:36px;margin:0;text-align:center}
 }
 
-.documents-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:22px 20px 18px;border-bottom:1px solid var(--line)}
-.documents-head>div{min-width:0}
-.documents-kicker{font:600 10px Inter;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:6px}
-.panel .documents-head h2{padding:0;border:0;text-transform:none;letter-spacing:-.03em;font:700 clamp(24px,4vw,32px)/1.1 Inter;color:var(--txt);margin:0 0 7px}
-.documents-intro{max-width:650px;color:var(--mute);font-size:13px;line-height:1.6}
-.documents-race{flex:0 0 auto;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);font:600 11px Inter;color:var(--txt)}
-.documents-tools{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
-.documents-search{flex:1;min-width:0;width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font:13px Inter}
-.documents-filters{display:flex;gap:6px;overflow-x:auto;padding:12px 18px 2px;scrollbar-width:thin}
-.documents-filters button{flex:0 0 auto;border:1px solid var(--line);border-radius:99px;background:transparent;color:var(--mute);padding:7px 11px;font:600 11px Inter;cursor:pointer}
-.documents-filters button[aria-pressed=true]{background:var(--red);border-color:var(--red);color:#fff}
-.documents-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px 18px 18px}
-.document-card{display:flex;flex-direction:column;min-width:0;padding:16px;border:1px solid var(--line);border-radius:13px;background:var(--soft);gap:9px}
-.document-card-top{display:flex;align-items:center;gap:8px;color:var(--red);font:600 9px Inter;letter-spacing:.12em;text-transform:uppercase}
-.document-card h3{font:700 15px/1.3 Inter;letter-spacing:-.015em}
-.document-card p{color:var(--mute);font-size:12px;line-height:1.55;flex:1}
-.document-card a{align-self:flex-start;color:var(--txt);font:600 12px Inter;text-decoration:none;border-bottom:1px solid var(--red);padding-bottom:3px}
-.document-card a:hover{color:var(--red)}
-.documents-note{margin:0 18px 18px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;color:var(--mute);font-size:11px;line-height:1.6}
-.documents-empty{grid-column:1/-1;padding:26px 12px;text-align:center;color:var(--mute);font-size:12px}
-@media(max-width:620px){.documents-head{align-items:flex-start;flex-direction:column;padding:18px 15px 15px;gap:12px}.documents-race{max-width:100%;white-space:normal}.documents-tools{padding:12px 14px}.documents-filters{padding:12px 14px 2px}.documents-list{grid-template-columns:minmax(0,1fr);padding:12px 14px 14px;gap:9px}.document-card{padding:14px}.documents-note{margin:0 14px 14px}.documents-intro{font-size:12px}}
+.paddock-archive{overflow:hidden}
+.paddock-hero{position:relative;isolation:isolate;overflow:hidden;padding:22px clamp(18px,3vw,30px) 0;background:#15171c;color:#f7f7f8;border-bottom:3px solid var(--red)}
+.paddock-hero:before{content:"";position:absolute;z-index:-1;right:-38px;top:55px;width:290px;height:290px;border:1px solid #ffffff12;border-radius:50%;box-shadow:0 0 0 28px #ffffff06,0 0 0 58px #ffffff04}
+.paddock-hero:after{content:"";position:absolute;z-index:-1;right:0;top:0;width:36%;height:100%;background:repeating-linear-gradient(135deg,transparent 0 18px,#ffffff06 19px 20px);mask-image:linear-gradient(90deg,transparent,#000)}
+.paddock-hero-top,.paddock-hero-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.paddock-mark{font:800 11px Inter;letter-spacing:.16em}.paddock-mark span{color:#ef4444}
+.paddock-live{display:flex;align-items:center;gap:7px;color:#c8cbd2;font:600 9px Inter;letter-spacing:.12em}
+.paddock-live i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#70d6a1;box-shadow:0 0 0 3px #70d6a11f}
+.paddock-hero-copy{padding:clamp(26px,4vw,44px) 0 26px;max-width:620px}
+.paddock-hero .documents-kicker{color:#ff6268}
+.paddock-hero h2{font:800 clamp(34px,6vw,58px)/.91 Inter,sans-serif;letter-spacing:-.065em;margin:0 0 15px;color:#fff}
+.paddock-hero h2 em{font-style:normal;color:#ff555c}
+.paddock-hero-copy>p:last-child{max-width:470px;color:#c3c6ce;font-size:13px;line-height:1.65}
+.paddock-hero-bottom{position:relative;margin:0 -2px;padding:14px 0;border-top:1px solid #ffffff1c}
+.paddock-hero-bottom>div{display:flex;flex-direction:column;gap:5px;min-width:0}
+.paddock-meta-label{color:#9ea3af;font:600 9px Inter;letter-spacing:.13em}
+.paddock-hero-bottom strong{font:600 12px Inter;color:#fff;overflow-wrap:anywhere}
+.paddock-primary-link{display:inline-flex;align-items:center;gap:16px;flex:0 0 auto;padding:11px 13px;background:#f0444b;color:white;text-decoration:none;font:700 10px Inter;letter-spacing:.04em;border-radius:6px}
+.paddock-primary-link span{font-size:15px}
+.paddock-body{padding:20px clamp(14px,2.5vw,24px) 18px}
+.paddock-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
+.paddock-section-heading h3{font:750 21px/1.1 Inter;letter-spacing:-.04em;margin:0;color:var(--txt)}
+.paddock-section-note,.paddock-record-count{color:var(--mute);font:600 9px Inter;letter-spacing:.1em;white-space:nowrap}
+.paddock-categories{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.paddock-categories button{display:flex;align-items:flex-start;gap:9px;min-width:0;position:relative;text-align:left;padding:13px 10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--txt);cursor:pointer;transition:border-color .15s,background .15s}
+.paddock-categories button[aria-pressed=true]{border-color:var(--red);background:color-mix(in srgb,var(--red) 7%,var(--soft));box-shadow:inset 0 2px var(--red)}
+.paddock-category-icon{display:grid;place-items:center;flex:0 0 27px;height:27px;border-radius:7px;background:var(--card2);color:var(--red);font:700 17px Inter}
+.paddock-categories button>span:nth-child(2){display:flex;flex-direction:column;gap:5px;min-width:0}
+.paddock-categories b{font:700 11px Inter}
+.paddock-categories small{color:var(--mute);font:10px/1.35 Inter}
+.paddock-category-arrow{margin-left:auto;color:var(--mute);font-size:11px}
+.paddock-latest-heading{margin-top:26px}
+.paddock-latest-heading .documents-kicker{margin-bottom:6px}
+.paddock-latest-heading h3{margin-bottom:6px}
+.paddock-latest-heading p:last-child{color:var(--mute);font-size:11px;line-height:1.5}
+.documents-tools{display:flex;align-items:center;gap:9px;padding:10px 12px;margin:0 0 10px;border:1px solid var(--line);border-radius:9px;background:var(--card2)}
+.paddock-search-icon{font-size:22px;line-height:1;color:var(--mute)}
+.documents-search{flex:1;min-width:0;width:100%;background:transparent;color:var(--txt);border:0;outline:none;padding:4px 0;font:12px Inter}
+.documents-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.document-card{display:flex;flex-direction:column;min-width:0;padding:15px;border:1px solid var(--line);border-radius:10px;background:var(--soft);gap:10px;transition:border-color .15s,transform .15s}
+.document-card:hover{border-color:color-mix(in srgb,var(--red) 55%,var(--line));transform:translateY(-1px)}
+.document-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--red);font:700 9px Inter;letter-spacing:.1em;text-transform:uppercase}
+.document-number{color:var(--mute);font:600 9px Inter;letter-spacing:.04em}
+.document-card h4{font:750 14px/1.35 Inter;letter-spacing:-.02em;color:var(--txt)}
+.document-card p{color:var(--mute);font-size:11px;line-height:1.55;flex:1}
+.document-card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.document-card-meta span{padding:4px 6px;border:1px solid var(--line);border-radius:4px;color:var(--mute);font:600 9px Inter}
+.document-card a{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--txt);font:700 10px Inter;text-decoration:none;padding-top:10px;border-top:1px solid var(--line)}
+.document-card a span{color:var(--red);font-size:15px}
+.documents-empty{grid-column:1/-1;padding:28px 12px;text-align:center;color:var(--mute);font-size:12px;border:1px dashed var(--line);border-radius:10px}
+.paddock-footer{display:grid;grid-template-columns:auto 1fr;gap:8px 11px;align-items:start;margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--card2)}
+.paddock-footer-icon{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:var(--soft);color:var(--red);font-size:17px}
+.paddock-footer p{color:var(--mute);font-size:11px;line-height:1.55}
+.paddock-footer p strong{color:var(--txt)}
+.paddock-footer>a{grid-column:2;color:var(--txt);font:700 10px Inter;text-decoration:none}
+@media(max-width:760px){.paddock-categories{grid-template-columns:repeat(2,minmax(0,1fr))}.paddock-hero:before{right:-100px}.paddock-hero:after{width:48%}}
+@media(max-width:520px){.paddock-hero{padding:17px 15px 0}.paddock-hero-copy{padding:28px 0 22px}.paddock-hero h2{font-size:39px}.paddock-hero-copy>p:last-child{font-size:12px}.paddock-hero-bottom{align-items:flex-start;flex-direction:column}.paddock-primary-link{width:100%;justify-content:space-between}.paddock-body{padding:17px 12px 13px}.paddock-section-heading h3{font-size:19px}.paddock-section-note{display:none}.paddock-categories{gap:7px}.paddock-categories button{padding:11px 9px;gap:7px}.paddock-category-icon{flex-basis:24px;height:24px}.paddock-categories b{font-size:10px}.paddock-categories small{font-size:9px}.paddock-category-arrow{display:none}.paddock-latest-heading{margin-top:23px}.paddock-latest-heading .paddock-record-count{font-size:8px}.documents-list{grid-template-columns:minmax(0,1fr);gap:8px}.document-card{padding:13px}.paddock-footer{padding:12px}}
 .msg.event-yellow time,.msg.event-red time,.msg.event-green time,.msg.event-blue time{font-weight:700}
 @media(max-width:480px){.msg{margin:6px;padding:10px;grid-template-columns:56px minmax(0,1fr);gap:8px;font-size:12px}.msg time{font-size:11px}.msg .msg-meta{font-size:9px}}
 .state{padding:30px 18px;text-align:center;color:var(--mute)}
@@ -771,12 +807,25 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
  <section class="panel pane" id="v-control" hidden><h2>Race control</h2><div id="controlInsights" class="control-insights" aria-live="polite"><div class="state">Building race-control summary…</div></div><div class="control-tools" id="controlTools" aria-label="Filter race control messages"><div class="control-filters" role="group" aria-label="Message category"><button type="button" data-control-filter="all" aria-pressed="true">All</button><button type="button" data-control-filter="flags" aria-pressed="false">Flags</button><button type="button" data-control-filter="safety" aria-pressed="false">Safety Car</button><button type="button" data-control-filter="incidents" aria-pressed="false">Incidents</button><button type="button" data-control-filter="other" aria-pressed="false">Other</button></div><button type="button" class="control-order" id="controlOrder" aria-label="Change message order">Newest first ↓</button></div><div class="scroll" id="control"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-radio" hidden><h2>Team radio</h2><div class="tools"><select id="rsess" aria-label="Session"></select></div><div class="scroll" id="radioList"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-weather" hidden><h2>Weather</h2><div class="tools"><select id="wsess" aria-label="Session"></select></div><div id="weatherView"><div class="state">Loading…</div></div></section>
- <section class="panel pane" id="v-documents" hidden>
-  <div class="documents-head"><div><p class="documents-kicker">REDLINE GRID / RACE DESK</p><h2>Race Documents</h2><p class="documents-intro">A starting point for race-weekend decisions, investigations and technical references. We link to original sources and add our own context rather than rehosting official PDFs.</p></div><div class="documents-race" id="documentsRace">Choose a completed Grand Prix to contextualise this desk</div></div>
-  <div class="documents-tools"><input class="documents-search" id="documentSearch" type="search" placeholder="Search decisions, technical rules, announcements…" aria-label="Search document sources"></div>
-  <div class="documents-filters" id="documentFilters" role="group" aria-label="Filter document sources"><button type="button" data-doc-filter="all" aria-pressed="true">All sources</button><button type="button" data-doc-filter="stewards" aria-pressed="false">Stewards &amp; decisions</button><button type="button" data-doc-filter="technical" aria-pressed="false">Technical</button><button type="button" data-doc-filter="announcements" aria-pressed="false">Announcements</button><button type="button" data-doc-filter="results" aria-pressed="false">Results &amp; sessions</button></div>
-  <div class="documents-list" id="documentList"></div>
-  <p class="documents-note">Source directory, not a mirror of the FIA document portal. These links open the publishers’ websites. Individual race-specific documents and summaries will be added only when the source and publication details can be verified.</p>
+ <section class="panel pane paddock-archive" id="v-documents" hidden>
+  <header class="paddock-hero">
+   <div class="paddock-hero-top"><span class="paddock-mark">RG<span> / </span>ARCHIVE</span><span class="paddock-live"><i></i> OFFICIAL SOURCES</span></div>
+   <div class="paddock-hero-copy"><p class="documents-kicker">THE REDLINE GRID DOCUMENT ROOM</p><h2>THE PADDOCK<br><em>ARCHIVE</em></h2><p>Every ruling tells a story. Track the decisions, technical checks and official records behind a Grand Prix weekend.</p></div>
+   <div class="paddock-hero-bottom"><div><span class="paddock-meta-label">RACE DESK CONTEXT</span><strong id="documentsRace">Selected Grand Prix</strong></div><a href="https://www.fia.com/documents/championships/fia-formula-one-world-championship-14/season" target="_blank" rel="noopener noreferrer" class="paddock-primary-link">OPEN FIA ARCHIVE <span>↗</span></a></div>
+  </header>
+  <div class="paddock-body">
+   <div class="paddock-section-heading"><div><p class="documents-kicker">01 / EXPLORE BY FILE TYPE</p><h3>Find your angle</h3></div><span class="paddock-section-note">FILTER THE RECORD</span></div>
+   <div class="paddock-categories" id="documentFilters" role="group" aria-label="Filter archive documents">
+    <button type="button" data-doc-filter="all" aria-pressed="true"><span class="paddock-category-icon">▤</span><span><b>All files</b><small>Every document</small></span><span class="paddock-category-arrow">↗</span></button>
+    <button type="button" data-doc-filter="stewards" aria-pressed="false"><span class="paddock-category-icon">§</span><span><b>Stewards</b><small>Decisions &amp; infringements</small></span><span class="paddock-category-arrow">↗</span></button>
+    <button type="button" data-doc-filter="technical" aria-pressed="false"><span class="paddock-category-icon">⌁</span><span><b>Technical</b><small>Checks &amp; compliance</small></span><span class="paddock-category-arrow">↗</span></button>
+    <button type="button" data-doc-filter="results" aria-pressed="false"><span class="paddock-category-icon">▥</span><span><b>Classifications</b><small>Results &amp; points</small></span><span class="paddock-category-arrow">↗</span></button>
+   </div>
+   <div class="paddock-section-heading paddock-latest-heading"><div><p class="documents-kicker">02 / LATEST VERIFIED FILES</p><h3>From the document room</h3><p>Direct links to official FIA PDFs. These examples are from the 2026 Singapore Grand Prix.</p></div><span class="paddock-record-count" id="documentCount">05 RECORDS</span></div>
+   <div class="documents-tools"><span class="paddock-search-icon">⌕</span><input class="documents-search" id="documentSearch" type="search" placeholder="Search titles, car numbers or document types…" aria-label="Search archive documents"></div>
+   <div class="documents-list" id="documentList"></div>
+   <div class="paddock-footer"><span class="paddock-footer-icon">↗</span><p><strong>Primary sources, always.</strong> Redline Grid links to the FIA's original publications. Document summaries are brief orientation notes, not substitutes for the official ruling or report.</p><a href="https://www.fia.com/documents/championships/fia-formula-one-world-championship-14/season" target="_blank" rel="noopener noreferrer">Browse full FIA archive ↗</a></div>
+  </div>
  </section>
  <section class="panel pane" id="v-tele" hidden><h2>Telemetry</h2>
   <div class="tools"><select id="lsess" aria-label="Session"></select><select id="ldrv" aria-label="Driver"></select><select id="clap" aria-label="Lap" hidden></select></div>
@@ -920,22 +969,24 @@ function show(top,sub){
 }
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>show(b.dataset.v));
 
-/* Race Desk source directory: links only, with searchable categories and no copied PDFs. */
+/* Paddock Archive: verified examples linking directly to official FIA PDFs. */
 const documentSources=[
- {type:"stewards",tag:"STEWARDS & DECISIONS",title:"FIA documents",desc:"Find published steward decisions, summonses, investigations and official event documents.",url:"https://www.fia.com/documents",link:"Browse FIA documents"},
- {type:"technical",tag:"TECHNICAL",title:"FIA Formula One regulations",desc:"Consult the official regulations that govern technical compliance and sporting procedures.",url:"https://www.fia.com/regulation/category/110",link:"Open regulations"},
- {type:"announcements",tag:"ANNOUNCEMENTS",title:"FIA media centre",desc:"Check official FIA announcements and press releases for updates and publication context.",url:"https://www.fia.com/media-center/press_release",link:"Read FIA announcements"},
- {type:"results",tag:"RESULTS & SESSIONS",title:"Formula 1 results",desc:"Cross-check session classifications, race results and the wider weekend timeline.",url:"https://www.formula1.com/en/results",link:"Browse F1 results"}
+ {type:"results",tag:"CHAMPIONSHIP",number:"DOC 91",title:"Championship Points",desc:"Updated drivers’ and teams’ championship points following the Singapore Grand Prix.",meta:["11 Oct 2026","Points"],url:"https://www.fia.com/system/files/decision-document/2026_singapore_grand_prix_-_championship_points.pdf"},
+ {type:"results",tag:"CLASSIFICATION",number:"DOC 90",title:"Final Race Classification",desc:"The official final classification for the Singapore Grand Prix.",meta:["11 Oct 2026","Race"],url:"https://www.fia.com/system/files/decision-document/2026_singapore_grand_prix_-_final_race_classification.pdf"},
+ {type:"technical",tag:"TECHNICAL DELEGATE",number:"DOC 89",title:"Race Scrutineering Report",desc:"Technical checks and compliance inspections carried out before and after the race.",meta:["11 Oct 2026","Technical"],url:"https://www.fia.com/system/files/decision-document/2026_singapore_grand_prix_-_race_scrutineering.pdf"},
+ {type:"stewards",tag:"INFRINGEMENT",number:"DOC 88",title:"Race Deleted Lap Times",desc:"Stewards’ report covering lap times deleted for cars not using the track at specified turns.",meta:["11 Oct 2026","Track limits"],url:"https://www.fia.com/system/files/decision-document/2026_singapore_grand_prix_-_infringement_-_race_deleted_lap_times.pdf"},
+ {type:"stewards",tag:"STEWARDS' DECISION",number:"DOC 86",title:"Car 44 — Leaving the Track",desc:"The stewards’ decision concerning an alleged track-limits infringement and gaining an advantage.",meta:["11 Oct 2026","Car 44"],url:"https://www.fia.com/system/files/decision-document/2026_singapore_grand_prix_-_decision_-_car_44_-_alleged_leaving_the_track_and_gaining_an_advantage.pdf"}
 ];
 let documentFilter="all";
 function renderDocuments(){
  const host=$("documentList");if(!host)return;
  const query=($("documentSearch")?.value||"").trim().toLowerCase();
- const list=documentSources.filter(d=>(documentFilter==="all"||d.type===documentFilter)&&[d.tag,d.title,d.desc,d.type].join(" ").toLowerCase().includes(query));
+ const list=documentSources.filter(d=>(documentFilter==="all"||d.type===documentFilter)&&[d.tag,d.number,d.title,d.desc,d.type,...d.meta].join(" ").toLowerCase().includes(query));
  $("documentFilters")?.querySelectorAll("[data-doc-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.docFilter===documentFilter)));
  const race=$("documentsRace");
- if(race)race.textContent=cur?(cur.country_name||cur.location||"Selected Grand Prix")+" · "+new Date(cur.date_start).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}):"Select a Grand Prix from the season list";
- host.innerHTML=list.length?list.map(d=>'<article class="document-card"><div class="document-card-top"><span>'+esc(d.tag)+'</span></div><h3>'+esc(d.title)+'</h3><p>'+esc(d.desc)+'</p><a href="'+esc(d.url)+'" target="_blank" rel="noopener noreferrer">'+esc(d.link)+' ↗</a></article>').join(""):'<div class="documents-empty">No source links match that search. Try another keyword or category.</div>';
+ if(race)race.textContent=cur?(cur.country_name||cur.location||"Selected Grand Prix")+" · "+new Date(cur.date_start).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}):"Choose a Grand Prix from the season list";
+ const count=$("documentCount");if(count)count.textContent=String(list.length).padStart(2,"0")+" RECORD"+(list.length===1?"":"S");
+ host.innerHTML=list.length?list.map(d=>'<article class="document-card"><div class="document-card-top"><span>'+esc(d.tag)+'</span><span class="document-number">'+esc(d.number)+'</span></div><h4>'+esc(d.title)+'</h4><p>'+esc(d.desc)+'</p><div class="document-card-meta">'+d.meta.map(m=>'<span>'+esc(m)+'</span>').join("")+'</div><a href="'+esc(d.url)+'" target="_blank" rel="noopener noreferrer">OPEN OFFICIAL PDF <span>↗</span></a></article>').join(""):'<div class="documents-empty">No records match those filters. Try another keyword or open the full FIA archive.</div>';
 }
 $("documentSearch")?.addEventListener("input",renderDocuments);
 $("documentFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-doc-filter]");if(!b)return;documentFilter=b.dataset.docFilter;renderDocuments()});
