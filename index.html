@@ -1017,25 +1017,34 @@ function normaliseCountdownSession(s,race){
 async function loadCountdownSchedule(y){
  const targetYear=Number.isFinite(Number(y))?Number(y):nowY,now=Date.now();
  let items=[];
- try{const all=await get(`/sessions?year=${targetYear}`);items=all.map(x=>normaliseCountdownSession(x,rounds.find(r=>r.meeting_key===x.meeting_key))).filter(Boolean)}catch(e){}
- // A partial OpenF1 response is not enough to prove that the upcoming schedule is complete.
- // Merge Jolpica sessions whenever OpenF1 has no upcoming/in-progress session, preserving OpenF1 entries on duplicates.
- const hasUpcoming=items.some(x=>x.start>now||(x.start<=now&&x.end>now));
- if(!hasUpcoming){
+ // Home's schedule is archive-first: the bundled Jolpica archive is local, predictable,
+ // and avoids putting the Home tab behind OpenF1's shared request queue.
+ try{
+  const archive=await readStaticSeasonArchive(targetYear);
+  const races=archive.responses?.["/"+targetYear+"/races/"]?.RaceTable?.Races||[];
+  items=races.flatMap(r=>{
+   const meta={_source:"archive",season:targetYear,round:Number(r.round),meeting_name:r.raceName||"Grand Prix",raceName:r.raceName||"Grand Prix",country_name:r.Circuit?.Location?.country||"",location:r.Circuit?.Location?.locality||r.Circuit?.circuitName||"",circuit_short_name:r.Circuit?.circuitName||"",jolpicaRace:r};
+   return jolpicaSessionList(r).map(q=>normaliseCountdownSession({name:q.name,date_start:q.date.toISOString(),date_end:new Date(+q.date+7200000).toISOString(),_source:"archive",meeting_name:meta.meeting_name,circuit_short_name:meta.circuit_short_name,round:meta.round},meta)).filter(Boolean);
+  });
+ }catch(e){console.warn("Local schedule archive unavailable:",e)}
+ // Older seasons or a missing archive can still use the live schedule as a fallback.
+ if(!items.length){
+  try{const all=await get("/sessions?year="+targetYear);items=all.map(x=>normaliseCountdownSession(x,rounds.find(r=>r.meeting_key===x.meeting_key))).filter(Boolean)}catch(e){}
+ }
+ if(!items.some(x=>x.start>now||(x.start<=now&&x.end>now))){
   try{
-   const hasCurrentJolpica=rounds.some(r=>r._source==="jolpica"&&Number(r.season)===targetYear);
-   const races=hasCurrentJolpica?rounds.filter(r=>r._source==="jolpica"&&Number(r.season)===targetYear):await jolpicaRounds(targetYear);
-   let fallback=races.flatMap(r=>r.jolpicaRace?jolpicaSessionList(r.jolpicaRace).map(q=>normaliseCountdownSession({name:q.name,date_start:q.date.toISOString(),date_end:new Date(+q.date+7200000).toISOString(),_source:"jolpica",meeting_name:r.meeting_name,circuit_short_name:r.circuit_short_name,round:r.jolpicaRound},r)):[]);
-   if(!fallback.some(x=>x.start>now||(x.start<=now&&x.end>now))){
-    try{const nextYear=await jolpicaRounds(targetYear+1);const nextItems=nextYear.flatMap(r=>r.jolpicaRace?jolpicaSessionList(r.jolpicaRace).map(q=>normaliseCountdownSession({name:q.name,date_start:q.date.toISOString(),date_end:new Date(+q.date+7200000).toISOString(),_source:"jolpica",meeting_name:r.meeting_name,circuit_short_name:r.circuit_short_name,round:r.jolpicaRound},r)):[]);fallback.push(...nextItems)}catch(e){}
-   }
-   const keys=new Set(items.map(x=>`${x.name.toLowerCase()}|${Math.round(x.start/60000)}`));
-   items.push(...fallback.filter(x=>!keys.has(`${x.name.toLowerCase()}|${Math.round(x.start/60000)}`)));
+   const races=await jolpicaRounds(targetYear);
+   const fallback=races.flatMap(r=>r.jolpicaRace?jolpicaSessionList(r.jolpicaRace).map(q=>normaliseCountdownSession({name:q.name,date_start:q.date.toISOString(),date_end:new Date(+q.date+7200000).toISOString(),_source:"jolpica",meeting_name:r.meeting_name,circuit_short_name:r.circuit_short_name,round:r.jolpicaRound},r)):[]);
+   const keys=new Set(items.map(x=>x.name.toLowerCase()+"|"+Math.round(x.start/60000)));
+   items.push(...fallback.filter(x=>!keys.has(x.name.toLowerCase()+"|"+Math.round(x.start/60000))));
   }catch(e){}
  }
- countdownSessions=items.filter(Boolean).sort((a,b)=>a.start-b.start);renderLast();if(typeof renderBriefing==="function")renderBriefing();
+ countdownSessions=items.filter(Boolean).sort((a,b)=>a.start-b.start);
+ renderLast();if(typeof renderBriefing==="function")renderBriefing();
  if(countdownTimer)clearInterval(countdownTimer);countdownTimer=setInterval(renderCountdown,1000);
- if(countdownRefreshTimer)clearInterval(countdownRefreshTimer);countdownRefreshTimer=setInterval(()=>loadCountdownSchedule(nowY).catch(()=>{}),30*60*1000);
+ // Refreshing the display does not re-fetch schedule data every 30 minutes; the local archive is the source of truth.
+ if(countdownRefreshTimer)clearInterval(countdownRefreshTimer);
+ countdownRefreshTimer=setInterval(()=>{renderLast();if(typeof renderBriefing==="function")renderBriefing()},30*60*1000);
 }
 function countdownHTML(){
  const now=Date.now(),active=countdownSessions.find(x=>x.start<=now&&now<x.end),next=countdownSessions.find(x=>x.start>now),chosen=active||next;
@@ -1614,7 +1623,23 @@ async function loadBriefingFeatures(force=false){
     if(fastestPit)intel.push(tile("QUICKEST PIT STOP",esc(name(fastestPit.driver_number)),Number(fastestPit.pit_duration).toFixed(2)+'s · Lap '+esc(fastestPit.lap_number??"—")));
     const when=session.date_start?new Date(session.date_start).toLocaleDateString(undefined,{day:"numeric",month:"short"}):"";
     spotlight.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot"></span><span>GRAND PRIX DATA · '+esc(when)+'</span></div><p class="briefing-lead">'+esc(session.meeting_name||session.country_name||"Grand Prix")+'</p><p class="briefing-intel-sub">Beyond the podium: the data behind the race.</p>'+(intel.length?'<div class="briefing-intel-grid">'+intel.join("")+'</div>':'<p>Classification is available, but detailed lap, grid or pit-stop data has not been published for this race yet.</p>')+'<p class="briefing-recap-foot">Based on available OpenF1 race data.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+nowY+'/races" target="_blank" rel="noopener noreferrer">Check official race results ↗</a>';
-   }catch(e){console.warn("Race Intel unavailable:",e);if(!await restoreHomeCard("race-intel-"+nowY,spotlight,"Race Intel"))spotlight.innerHTML='<p class="briefing-lead">Race Intel unavailable right now</p><p>Redline could not load enough verified Grand Prix data. Try refreshing shortly.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Open standings instead →</button>'}
+   }catch(e){
+    console.warn("Race Intel live data unavailable:",e);
+    const restored=await restoreHomeCard("race-intel-"+nowY,spotlight,"Race Intel");
+    if(!restored){
+     let localIntel=false;
+     try{
+      const archived=await archiveJolpica("/"+nowY+"/results/");
+      const races=(archived?.RaceTable?.Races||[]).filter(r=>r.date&&new Date(r.date+"T23:59:59").getTime()<=Date.now()&&Array.isArray(r.Results)&&r.Results.length).sort((a,b)=>new Date(b.date)-new Date(a.date));
+      const race=races[0],podium=(race?.Results||[]).slice().sort((a,b)=>Number(a.position)-Number(b.position)).slice(0,3);
+      if(race&&podium.length){
+       spotlight.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>ARCHIVED RACE SNAPSHOT</span></div><p class="briefing-lead">'+esc(race.raceName||"Latest Grand Prix")+'</p><p class="briefing-intel-sub">Live lap telemetry is unavailable, so here is the verified classification from Redline’s bundled archive.</p><div class="briefing-podium">'+podium.map((v,i)=>'<div class="briefing-podium-row"><span class="briefing-podium-pos">'+(i+1)+'</span><span class="briefing-podium-name">'+esc([v.Driver?.givenName,v.Driver?.familyName].filter(Boolean).join(" ")||v.Driver?.driverId||"Driver")+'<small>'+esc(v.Constructor?.name||"")+'</small></span><b>'+esc(v.points??"—")+' pts</b></div>').join("")+'</div><p class="briefing-recap-foot">Local season archive · no live API required.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+nowY+'/races" target="_blank" rel="noopener noreferrer">Check official race results ↗</a>';
+       localIntel=true;
+      }
+     }catch(archiveError){console.warn("Race Intel local archive unavailable:",archiveError)}
+     if(!localIntel)spotlight.innerHTML='<p class="briefing-lead">Race Intel unavailable right now</p><p>Live race data did not respond and no archived classification was available. The rest of the Home tab remains usable.</p><button type="button" class="briefing-result-link" data-hub-tab="standings">Open standings instead →</button>';
+    }
+   }
    clearTimeout(intelFailSafe);
    spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight);
   })();
