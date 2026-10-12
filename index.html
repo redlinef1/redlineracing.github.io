@@ -780,6 +780,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
 #v-result>h2:before,#v-control>h2:before,#v-radio>h2:before,#v-weather>h2:before{content:"REDLINE GRID / RACE CENTRE"!important}
 .pane.grid#v-standings>section.panel h2{font:600 13px Inter;letter-spacing:.14em;text-transform:uppercase;padding:14px 18px;background:transparent;color:var(--mute)}
 @media(max-width:820px){.strategy-hero>div:first-child{flex:0 0 auto}.strategy-hero{gap:6px}}@media(max-width:640px){.strategy-pane .briefing-head{padding:18px 16px 8px}.strategy-summary{padding-top:8px}.pane.grid#v-standings{grid-template-columns:minmax(0,1fr)}.pane.grid#v-standings>.standings-head{grid-column:1}.panel.pane>.stats-head{padding:20px 16px 16px;gap:12px;flex-wrap:wrap}.panel.pane:not(#v-news):not(#v-live):not(#v-stats):not(#v-documents):not(#v-standings)>h2{padding:20px 16px 16px}}
+.lap-editorial-wrap{padding:0 18px 18px}.lap-editorial{margin:0;padding:18px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(135deg,var(--soft),var(--card));position:relative;overflow:hidden}.lap-editorial:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--red)}.lap-editorial-kicker{margin:0 0 7px;color:var(--red);font:700 10px Inter;letter-spacing:.16em;text-transform:uppercase}.lap-editorial h3{margin:0 0 8px;font:700 20px/1.2 Inter;letter-spacing:-.025em}.lap-editorial p{margin:0 0 10px;color:var(--mute);line-height:1.6}.lap-editorial p:last-child{margin-bottom:0}.lap-editorial strong{color:var(--txt)}.lap-editorial-note{font-size:12px;opacity:.9}.lap-editorial-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:13px 0}.lap-editorial-metric{min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:10px 12px}.lap-editorial-metric span{display:block;color:var(--mute);font-size:10px;letter-spacing:.08em;text-transform:uppercase}.lap-editorial-metric b{display:block;margin-top:3px;font:600 20px "IBM Plex Mono",monospace}.lap-editorial-list{display:grid;gap:7px;margin:12px 0}.lap-editorial-row{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px}.lap-editorial-row span{color:var(--mute);min-width:0}.lap-editorial-row b{font-family:"IBM Plex Mono",monospace;white-space:nowrap}@media(max-width:640px){.lap-editorial-wrap{padding:0 12px 14px}.lap-editorial{padding:15px}.lap-editorial h3{font-size:18px}.lap-editorial-metric b{font-size:18px}}
 </style>
 </head>
 <body>
@@ -845,7 +846,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
  </section>
  <section class="panel pane" id="v-tele" hidden><h2>Telemetry</h2>
   <div class="tools"><select id="lsess" aria-label="Session"></select><select id="ldrv" aria-label="Driver"></select><select id="clap" aria-label="Lap" hidden></select></div>
-  <div class="scroll" id="lapList"><div class="state">Loading…</div></div><div id="carView" hidden></div></section>
+  <div class="scroll" id="lapList"><div class="state">Loading…</div></div><div id="lapEditorial" class="lap-editorial-wrap" aria-live="polite"></div><div id="carView" hidden></div></section>
  <section class="panel pane" id="v-news">
   <div class="briefing-head">
    <div><p class="briefing-kicker">REDLINE GRID / WEEKEND INTELLIGENCE</p><h2>Race Centre</h2><p class="briefing-intro">A quick guide to what's coming up and what has already happened this race weekend.</p></div>
@@ -993,7 +994,7 @@ function show(top,sub){
  const pane=(sub==="laps"||sub==="car")?"tele":sub;
  document.querySelectorAll(".pane").forEach(p=>p.hidden=p.id!=="v-"+pane);
  stopLive();
- if(pane==="tele"){$("lapList").hidden=sub!=="laps";$("carView").hidden=sub!=="car";$("clap").hidden=sub!=="car";
+ if(pane==="tele"){$("lapList").hidden=sub!=="laps";$("lapEditorial").hidden=sub!=="laps";$("carView").hidden=sub!=="car";$("clap").hidden=sub!=="car";
   }
  ensure();
 }
@@ -1402,15 +1403,39 @@ async function loadLaps(){
   $("ldrv").innerHTML='<option value="">Fastest laps, all drivers</option>'+order.map(n=>`<option value="${n}">${esc(who(by,n).full_name||"Driver #"+n)}</option>`).join("");
   drawTele()}catch(e){fail("lapList",e)}
 }
+function lapMedian(values){const a=values.filter(Number.isFinite).slice().sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2}
+function lapEditorialMetric(label,value){return `<div class="lap-editorial-metric"><span>${esc(label)}</span><b>${esc(value)}</b></div>`}
+function renderLapEditorial(){
+ const box=$("lapEditorial"),{g,by,best,order}=lapData,n=$("ldrv").value;
+ if(!box)return;
+ if(!order||!order.length){box.innerHTML="";return}
+ if(!n){
+  const top=best[order[0]],third=order.slice(0,3),gap=third.length>1?((best[third[third.length-1]]-top)).toFixed(3)+"s":"—";
+  const rows=third.map((id,i)=>{const d=who(by,id);return `<div class="lap-editorial-row"><span>${i+1}. ${esc(d.full_name||"Driver #"+id)} · ${esc(d.team_name||"")}</span><b>${fmtTime(best[id])}</b></div>`}).join("");
+  box.innerHTML=`<article class="lap-editorial"><p class="lap-editorial-kicker">LAP TIME EDITORIAL / SESSION SNAPSHOT</p><h3>${esc(who(by,order[0]).full_name||"The session benchmark")} sets the benchmark</h3><p>The quickest recorded lap is ${fmtTime(top)}. The gap below shows how tightly the leading single-lap times are grouped; it does not, by itself, measure race pace or consistency over a stint.</p><div class="lap-editorial-metrics">${lapEditorialMetric("Timed drivers",String(order.length))}${lapEditorialMetric("P1–P3 spread",gap)}${lapEditorialMetric("Session benchmark",fmtTime(top))}</div><div class="lap-editorial-list">${rows}</div><p class="lap-editorial-note">Select a driver above to inspect their lap-by-lap pace progression. Fastest-lap order can be affected by session type, traffic, track evolution and lap conditions.</p></article>`;
+  return;
+ }
+ const d=who(by,n),laps=(g[n]||[]).filter(l=>typeof l.lap_duration==="number"&&Number.isFinite(l.lap_duration)).sort((a,b)=>a.lap_number-b.lap_number);
+ const clean=laps.filter(l=>!l.is_pit_out_lap),times=clean.map(l=>l.lap_duration),bestLap=best[n],median=lapMedian(times);
+ if(!times.length){box.innerHTML='<article class="lap-editorial"><p class="lap-editorial-kicker">LAP TIME EDITORIAL</p><h3>Not enough timed laps</h3><p>There are no comparable timed laps available for this driver in the selected session.</p></article>';return}
+ const third=Math.max(1,Math.floor(times.length/3)),early=lapMedian(times.slice(0,third)),late=lapMedian(times.slice(-third)),delta=early!==null&&late!==null?late-early:null;
+ const trend=delta===null||Math.abs(delta)<.05?" broadly stable between the opening and closing thirds":delta>0?" slower in the closing third than in the opening third":" quicker in the closing third than in the opening third";
+ const direction=delta===null||Math.abs(delta)<.05?"Little median pace change":delta>0?"Median lap times increased":"Median lap times decreased";
+ const validRange=times.length>1?Math.max(...times)-Math.min(...times):null;
+ const bestText=bestLap!==null&&bestLap!==undefined?fmtTime(bestLap):"—";
+ box.innerHTML=`<article class="lap-editorial"><p class="lap-editorial-kicker">LAP TIME EDITORIAL / PACE PROGRESSION</p><h3>${esc(d.full_name||"Selected driver")}: ${direction.toLowerCase()}</h3><p>Across ${times.length} timed lap${times.length===1?"":"s"} excluding recorded pit-out laps, the median pace was ${median===null?"unavailable":fmtTime(median)}. The lap-time pattern was${trend}. This describes the observed timing only; it cannot establish tyre degradation or its cause on its own.</p><div class="lap-editorial-metrics">${lapEditorialMetric("Best lap",bestText)}${lapEditorialMetric("Median pace",median===null?"—":fmtTime(median))}${lapEditorialMetric("Lap-time range",validRange===null?"—":(validRange*1).toFixed(3)+"s")}</div><div class="lap-editorial-list"><div class="lap-editorial-row"><span>Opening-third median</span><b>${early===null?"—":fmtTime(early)}</b></div><div class="lap-editorial-row"><span>Closing-third median</span><b>${late===null?"—":fmtTime(late)}</b></div><div class="lap-editorial-row"><span>Closing vs opening</span><b>${delta===null?"—":(delta>0?"+":"") + delta.toFixed(3)+"s"}</b></div></div><p class="lap-editorial-note">Interpret with care: traffic, yellow flags, fuel load, track evolution, pit strategy and session conditions can all change lap times. This is a descriptive comparison, not proof of cause.</p></article>`;
+}
 function drawLaps(){
  const {g,by,best,order}=lapData,n=$("ldrv").value;
- if(!order||!order.length){$("lapList").innerHTML='<div class="state">No lap times for this session.</div>';return}
+ if(!order||!order.length){$("lapList").innerHTML='<div class="state">No lap times for this session.</div>';renderLapEditorial();return}
  if(!n){const top=best[order[0]];
   $("lapList").innerHTML=order.map((k,i)=>{const d=who(by,k);
-   return row(i+1,av(d.headshot_url,d.full_name,d.team_colour),d.full_name||"Driver #"+k,(d.team_name||"")+(i?` · +${(best[k]-top).toFixed(3)}`:" · fastest"),fmtTime(best[k]),isFavD(d),"").replace('class="pts"',i?'class="pts"':'class="pts purple"')}).join("");return}
+   return row(i+1,av(d.headshot_url,d.full_name,d.team_colour),d.full_name||"Driver #"+k,(d.team_name||"")+(i?` · +${(best[k]-top).toFixed(3)}`:" · fastest"),fmtTime(best[k]),isFavD(d),"").replace('class="pts"',i?'class="pts"':'class="pts purple"')}).join("");
+  renderLapEditorial();return}
  const laps=g[n].slice().sort((a,b)=>a.lap_number-b.lap_number);
  $("lapList").innerHTML=laps.map(l=>{const t=l.lap_duration,isBest=t===best[n];
   return `<div class="lap${isBest?" best":""}"><small>Lap ${l.lap_number}</small><b>${typeof t==="number"?fmtTime(t):"No time"}${l.is_pit_out_lap?' <small>pit out</small>':""}</b><small>${typeof t==="number"&&!isBest?"+"+(t-best[n]).toFixed(3):isBest?"best":""}</small></div>`}).join("");
+ renderLapEditorial();
 }
 $("lsess").onchange=loadLaps;$("ldrv").onchange=drawTele;$("clap").onchange=()=>loadCar(false);
 
