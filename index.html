@@ -92,9 +92,10 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
 #tabs{display:flex;gap:4px;margin-bottom:12px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:auto}
 #tabs button{flex:1;white-space:nowrap;background:none;border:0;color:var(--mute);font:600 15px Inter;padding:10px 16px;cursor:pointer;border-radius:10px}
 #tabs button[aria-selected=true]{background:var(--on-bg);color:var(--on-fg)}#tabs button:hover{color:var(--txt)}#tabs button[aria-selected=true]:hover{color:var(--on-fg)}
-#sub{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-#sub button{background:none;border:1px solid var(--line);color:var(--mute);border-radius:99px;padding:5px 14px;cursor:pointer;font:500 14px Inter}
-#sub button[aria-selected=true]{border-color:var(--red);color:var(--txt);background:rgba(255,30,0,.15)}
+#sub{display:flex;gap:7px;margin:0 0 14px;padding:3px 0 7px;flex-wrap:wrap;align-items:center}
+#sub button{background:var(--card);border:1px solid var(--line);color:var(--mute);border-radius:10px;padding:8px 13px;cursor:pointer;font:600 12px Inter;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+#sub button[aria-selected=true]{border-color:var(--red);color:var(--txt);background:rgba(255,30,0,.12);box-shadow:inset 0 -2px 0 var(--red)}
+@media(max-width:600px){#sub{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding:2px 1px 9px;gap:6px}#sub button{flex:0 0 auto;padding:9px 12px;font-size:12px}}
 :focus-visible{outline:2px solid var(--red);outline-offset:2px}
 /* Keep inactive tabs hidden even when layout classes set display:grid/flex. */
 [hidden]{display:none!important}
@@ -256,6 +257,27 @@ select{background:var(--card2);color:var(--txt);border:1px solid var(--line);bor
  .control-order{display:block;width:100%;min-height:36px;margin:0;text-align:center}
 }
 
+.documents-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:22px 20px 18px;border-bottom:1px solid var(--line)}
+.documents-head>div{min-width:0}
+.documents-kicker{font:600 10px Inter;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:6px}
+.panel .documents-head h2{padding:0;border:0;text-transform:none;letter-spacing:-.03em;font:700 clamp(24px,4vw,32px)/1.1 Inter;color:var(--txt);margin:0 0 7px}
+.documents-intro{max-width:650px;color:var(--mute);font-size:13px;line-height:1.6}
+.documents-race{flex:0 0 auto;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);font:600 11px Inter;color:var(--txt)}
+.documents-tools{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.documents-search{flex:1;min-width:0;width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font:13px Inter}
+.documents-filters{display:flex;gap:6px;overflow-x:auto;padding:12px 18px 2px;scrollbar-width:thin}
+.documents-filters button{flex:0 0 auto;border:1px solid var(--line);border-radius:99px;background:transparent;color:var(--mute);padding:7px 11px;font:600 11px Inter;cursor:pointer}
+.documents-filters button[aria-pressed=true]{background:var(--red);border-color:var(--red);color:#fff}
+.documents-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px 18px 18px}
+.document-card{display:flex;flex-direction:column;min-width:0;padding:16px;border:1px solid var(--line);border-radius:13px;background:var(--soft);gap:9px}
+.document-card-top{display:flex;align-items:center;gap:8px;color:var(--red);font:600 9px Inter;letter-spacing:.12em;text-transform:uppercase}
+.document-card h3{font:700 15px/1.3 Inter;letter-spacing:-.015em}
+.document-card p{color:var(--mute);font-size:12px;line-height:1.55;flex:1}
+.document-card a{align-self:flex-start;color:var(--txt);font:600 12px Inter;text-decoration:none;border-bottom:1px solid var(--red);padding-bottom:3px}
+.document-card a:hover{color:var(--red)}
+.documents-note{margin:0 18px 18px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;color:var(--mute);font-size:11px;line-height:1.6}
+.documents-empty{grid-column:1/-1;padding:26px 12px;text-align:center;color:var(--mute);font-size:12px}
+@media(max-width:620px){.documents-head{align-items:flex-start;flex-direction:column;padding:18px 15px 15px;gap:12px}.documents-race{max-width:100%;white-space:normal}.documents-tools{padding:12px 14px}.documents-filters{padding:12px 14px 2px}.documents-list{grid-template-columns:minmax(0,1fr);padding:12px 14px 14px;gap:9px}.document-card{padding:14px}.documents-note{margin:0 14px 14px}.documents-intro{font-size:12px}}
 .msg.event-yellow time,.msg.event-red time,.msg.event-green time,.msg.event-blue time{font-weight:700}
 @media(max-width:480px){.msg{margin:6px;padding:10px;grid-template-columns:56px minmax(0,1fr);gap:8px;font-size:12px}.msg time{font-size:11px}.msg .msg-meta{font-size:9px}}
 .state{padding:30px 18px;text-align:center;color:var(--mute)}
@@ -749,6 +771,13 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
  <section class="panel pane" id="v-control" hidden><h2>Race control</h2><div id="controlInsights" class="control-insights" aria-live="polite"><div class="state">Building race-control summary…</div></div><div class="control-tools" id="controlTools" aria-label="Filter race control messages"><div class="control-filters" role="group" aria-label="Message category"><button type="button" data-control-filter="all" aria-pressed="true">All</button><button type="button" data-control-filter="flags" aria-pressed="false">Flags</button><button type="button" data-control-filter="safety" aria-pressed="false">Safety Car</button><button type="button" data-control-filter="incidents" aria-pressed="false">Incidents</button><button type="button" data-control-filter="other" aria-pressed="false">Other</button></div><button type="button" class="control-order" id="controlOrder" aria-label="Change message order">Newest first ↓</button></div><div class="scroll" id="control"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-radio" hidden><h2>Team radio</h2><div class="tools"><select id="rsess" aria-label="Session"></select></div><div class="scroll" id="radioList"><div class="state">Loading…</div></div></section>
  <section class="panel pane" id="v-weather" hidden><h2>Weather</h2><div class="tools"><select id="wsess" aria-label="Session"></select></div><div id="weatherView"><div class="state">Loading…</div></div></section>
+ <section class="panel pane" id="v-documents" hidden>
+  <div class="documents-head"><div><p class="documents-kicker">REDLINE GRID / RACE DESK</p><h2>Race Documents</h2><p class="documents-intro">A starting point for race-weekend decisions, investigations and technical references. We link to original sources and add our own context rather than rehosting official PDFs.</p></div><div class="documents-race" id="documentsRace">Choose a completed Grand Prix to contextualise this desk</div></div>
+  <div class="documents-tools"><input class="documents-search" id="documentSearch" type="search" placeholder="Search decisions, technical rules, announcements…" aria-label="Search document sources"></div>
+  <div class="documents-filters" id="documentFilters" role="group" aria-label="Filter document sources"><button type="button" data-doc-filter="all" aria-pressed="true">All sources</button><button type="button" data-doc-filter="stewards" aria-pressed="false">Stewards &amp; decisions</button><button type="button" data-doc-filter="technical" aria-pressed="false">Technical</button><button type="button" data-doc-filter="announcements" aria-pressed="false">Announcements</button><button type="button" data-doc-filter="results" aria-pressed="false">Results &amp; sessions</button></div>
+  <div class="documents-list" id="documentList"></div>
+  <p class="documents-note">Source directory, not a mirror of the FIA document portal. These links open the publishers’ websites. Individual race-specific documents and summaries will be added only when the source and publication details can be verified.</p>
+ </section>
  <section class="panel pane" id="v-tele" hidden><h2>Telemetry</h2>
   <div class="tools"><select id="lsess" aria-label="Session"></select><select id="ldrv" aria-label="Driver"></select><select id="clap" aria-label="Lap" hidden></select></div>
   <div class="scroll" id="lapList"><div class="state">Loading…</div></div><div id="carView" hidden></div></section>
@@ -875,7 +904,7 @@ let rounds=[],year,tok=0,current=null,t;
 const nowY=new Date().getFullYear();
 for(let y=nowY;y>=1950;y--)$("year").insertAdjacentHTML("beforeend",`<option>${y}</option>`);
 $("year").onchange=()=>loadYear(+$("year").value);
-const SUBS={race:[["result","Result"],["control","Race control"],["radio","Team radio"],["weather","Weather"]],tele:[["laps","Lap times"],["car","Car data"]]};
+const SUBS={race:[["result","Result"],["control","Race control"],["radio","Team radio"],["weather","Weather"],["documents","Documents"]],tele:[["laps","Lap times"],["car","Car data"]]};
 const memo={};let curSub="news";
 function show(top,sub){
  sub=sub||memo[top]||(SUBS[top]?SUBS[top][0][0]:top);memo[top]=sub;curSub=sub;
@@ -890,6 +919,27 @@ function show(top,sub){
  ensure();
 }
 document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+
+/* Race Desk source directory: links only, with searchable categories and no copied PDFs. */
+const documentSources=[
+ {type:"stewards",tag:"STEWARDS & DECISIONS",title:"FIA documents",desc:"Find published steward decisions, summonses, investigations and official event documents.",url:"https://www.fia.com/documents",link:"Browse FIA documents"},
+ {type:"technical",tag:"TECHNICAL",title:"FIA Formula One regulations",desc:"Consult the official regulations that govern technical compliance and sporting procedures.",url:"https://www.fia.com/regulation/category/110",link:"Open regulations"},
+ {type:"announcements",tag:"ANNOUNCEMENTS",title:"FIA media centre",desc:"Check official FIA announcements and press releases for updates and publication context.",url:"https://www.fia.com/media-center/press_release",link:"Read FIA announcements"},
+ {type:"results",tag:"RESULTS & SESSIONS",title:"Formula 1 results",desc:"Cross-check session classifications, race results and the wider weekend timeline.",url:"https://www.formula1.com/en/results",link:"Browse F1 results"}
+];
+let documentFilter="all";
+function renderDocuments(){
+ const host=$("documentList");if(!host)return;
+ const query=($("documentSearch")?.value||"").trim().toLowerCase();
+ const list=documentSources.filter(d=>(documentFilter==="all"||d.type===documentFilter)&&[d.tag,d.title,d.desc,d.type].join(" ").toLowerCase().includes(query));
+ $("documentFilters")?.querySelectorAll("[data-doc-filter]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.docFilter===documentFilter)));
+ const race=$("documentsRace");
+ if(race)race.textContent=cur?(cur.country_name||cur.location||"Selected Grand Prix")+" · "+new Date(cur.date_start).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}):"Select a Grand Prix from the season list";
+ host.innerHTML=list.length?list.map(d=>'<article class="document-card"><div class="document-card-top"><span>'+esc(d.tag)+'</span></div><h3>'+esc(d.title)+'</h3><p>'+esc(d.desc)+'</p><a href="'+esc(d.url)+'" target="_blank" rel="noopener noreferrer">'+esc(d.link)+' ↗</a></article>').join(""):'<div class="documents-empty">No source links match that search. Try another keyword or category.</div>';
+}
+$("documentSearch")?.addEventListener("input",renderDocuments);
+$("documentFilters")?.addEventListener("click",e=>{const b=e.target.closest("[data-doc-filter]");if(!b)return;documentFilter=b.dataset.docFilter;renderDocuments()});
+renderDocuments();
 
 
 /* ---------- Next-session countdown ---------- */
@@ -970,7 +1020,7 @@ function loadRound(i){
  document.querySelectorAll(".gp").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.i===i));
  $("pick").innerHTML=`<span>R${i+1} · ${esc(race.location||race.country_name)}</span><span>Change ▾</span>`;
  renderLast();$("last").title="Everything on this page is shown as it stood after this race";
- $("resTitle").textContent=`${race.country_name} Grand Prix result`;
+ $("resTitle").textContent=`${race.country_name} Grand Prix result`;renderDocuments();
  ["drivers","teams","result","control","radioList","lapList","weatherView"].forEach(id=>$(id).innerHTML='<div class="state">Loading…</div>');
  // Load only the active tab on startup; other race-data panels fetch when opened.
  // Eagerly prefetching every panel queued many rate-limited API requests and slowed Home.
