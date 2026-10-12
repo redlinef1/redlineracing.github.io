@@ -1484,7 +1484,7 @@ async function loadWeekendForecast(meeting){
   }else{
    html+='<p>No upcoming session falls within the current forecast window. Check back when the weekend is closer.</p><p class="briefing-weather-foot"><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather data by Open-Meteo.com</a>.</p>';
   }
-  briefingWeatherCache.set(key,html);box.innerHTML=html;await archiveWrite("weather:"+key,{html,savedAt:Date.now()});
+  briefingWeatherCache.set(key,html);box.innerHTML=html;await archiveWrite("weather:"+key,{html,savedAt:Date.now()});await archiveWrite("weather:last",{html,key,savedAt:Date.now()});
  }catch(e){
   console.warn("Redline Grid forecast error:",e);
   if(savedWeather?.html){
@@ -1526,7 +1526,8 @@ async function loadBriefingFeatures(force=false){
   await Promise.all([
    restoreHomeCard("race-intel-"+nowY,spotlight,"Race Intel"),
    restoreHomeCard("championship-"+nowY,champ,"championship standings"),
-   restoreHomeCard("circuit-"+nowY,circuit,"circuit guide")
+   restoreHomeCard("circuit-"+nowY,circuit,"circuit guide"),
+   (async()=>{const weather=$("briefingWeather");if(!weather)return;const saved=await archiveRead("weather:last");if(saved?.html&&!weather.querySelector(".briefing-weather-session")){weather.innerHTML=saved.html;const age=Math.max(1,Math.round((Date.now()-(saved.savedAt||Date.now()))/60000));const note=document.createElement("p");note.className="briefing-weather-foot";note.textContent="Offline archive · last saved "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+". Forecast may be outdated.";weather.appendChild(note)}})()
   ]);
   const sessionTask=(async()=>{
    try{
