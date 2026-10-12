@@ -1645,7 +1645,7 @@ async function loadBriefingFeatures(force=false){
   })();
   const champTask=(async()=>{
    try{
-    const data=await jget("/"+nowY+"/driverstandings/");
+    const data=await archiveJolpica("/"+nowY+"/driverstandings/");
     const rows=data.StandingsTable?.StandingsLists?.[0]?.DriverStandings||[];
     if(!rows.length){champ.innerHTML='<p class="briefing-lead">Championship standings not published yet</p><p>Once the season has recorded championship points, the title picture will appear here.</p>';return}
     const top=rows.slice(0,3),leader=top[0],gap=top[1]?Number(leader.points)-Number(top[1].points):null;
@@ -1694,6 +1694,26 @@ async function loadBriefingRecap(force=false){
   // Prefer OpenF1's current-season race sessions and classification. Jolpica-F1
   // can lag behind current results, so it is a fallback rather than the first source.
   const now=Date.now();
+  // Prefer the bundled season archive for the first paint. This keeps Home useful even
+  // when OpenF1/Jolpica are slow or unavailable; live APIs remain a fallback only.
+  try{
+   const archive=await readStaticSeasonArchive(y);
+   const scheduled=archive.responses?.["/"+y+"/races/"]?.RaceTable?.Races||[];
+   const resultRaces=archive.responses?.["/"+y+"/results/"]?.RaceTable?.Races||[];
+   const completed=resultRaces.filter(r=>r.date&&new Date(r.date+"T23:59:59").getTime()<=now&&(r.Results||[]).length).sort((a,b)=>new Date(b.date)-new Date(a.date));
+   const race=completed[0];
+   const scheduledRace=scheduled.find(r=>Number(r.round)===Number(race?.round));
+   const res=(race?.Results||[]).slice().sort((a,b)=>Number(a.position)-Number(b.position));
+   const winner=res.find(v=>Number(v.position)===1);
+   if(race&&winner){
+    const name=v=>[v.Driver?.givenName,v.Driver?.familyName].filter(Boolean).join(" ")||v.Driver?.driverId||"Driver";
+    const second=res.find(v=>Number(v.position)===2),third=res.find(v=>Number(v.position)===3),podium=[winner,second,third].filter(Boolean);
+    const podiumLine=podium.map((v,i)=>'<div class="briefing-podium-row"><span class="briefing-podium-pos">'+esc(v.position||i+1)+'</span><span class="briefing-podium-name">'+esc(name(v))+'<small>'+esc(v.Constructor?.name||"")+'</small></span><b>'+esc(v.Time?.time||v.status||"—")+'</b></div>').join("");
+    const date=jdate({date:race.date})||new Date(race.date+"T12:00:00Z"),gp=race.raceName||scheduledRace?.raceName||"Grand Prix";
+    briefingRecapBaseHtml='<div class="briefing-recap-top"><div><div class="briefing-statusline"><span class="briefing-live-dot"></span><span>ARCHIVED RESULT</span></div><p class="briefing-lead">'+esc(gp)+'</p><p>'+date.toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})+' · Winner: <strong>'+esc(name(winner))+'</strong>'+(winner.Constructor?.name?" · "+esc(winner.Constructor.name):"")+'</p></div><span class="briefing-recap-points">'+(winner.points?esc(winner.points)+" pts":"")+'</span></div><div class="briefing-verdict"><p class="briefing-verdict-kicker">THE VERDICT</p><p class="briefing-recap-summary">'+esc(name(winner))+' takes the win in the '+esc(gp)+'. This snapshot comes from the bundled season archive; check official results for any later corrections.</p></div><p class="briefing-podium-label">PODIUM</p><div class="briefing-podium">'+podiumLine+'</div><p class="briefing-recap-foot">Bundled season archive · no live API required for this result.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">View official F1 results ↗</a>';
+    box.dataset.loaded="true";renderBriefingRecapSessionStatus();return;
+   }
+  }catch(archiveError){console.warn("Local race recap archive unavailable; trying live sources",archiveError)}
   try{
    const sessions=await get("/sessions?year="+y);
    const races=(sessions||[]).filter(x=>x.session_key&&!x.is_cancelled&&/^(race|grand prix)$/i.test(String(x.session_name||"").trim())&&x.date_end&&new Date(x.date_end).getTime()<=now)
