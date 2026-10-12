@@ -909,6 +909,11 @@ async function restoreHomeCard(key,element,label){
 }
 function get(p){if(cache.has(p))return cache.get(p);const q=chain.then(async()=>{try{const v=await fetchRetry(p);if(Array.isArray(v)&&v.length)await archiveWrite("openf1:"+p,v);return v}catch(e){const saved=await archiveRead("openf1:"+p);if(Array.isArray(saved)&&saved.length){offlineArchiveNote("OpenF1");return saved}throw e}});
   chain=q.catch(()=>{}).then(()=>sleep(450));cache.set(p,q);q.then(v=>{if(Array.isArray(v)&&v.length===0&&cache.get(p)===q)cache.delete(p)}).catch(()=>{if(cache.get(p)===q)cache.delete(p)});return q}
+async function briefingGet(path,timeoutMs=8000){
+ const saved=await archiveRead("openf1:"+path);
+ if(Array.isArray(saved)&&saved.length){get(path).catch(()=>{});return saved}
+ return await Promise.race([get(path),new Promise((_,reject)=>setTimeout(()=>reject(new Error("OpenF1 request timed out: "+path)),timeoutMs))]);
+}
 const jolpicaCache=new Map(),staticArchiveCache=new Map();
 async function readStaticSeasonArchive(y){if(staticArchiveCache.has(y))return staticArchiveCache.get(y);const task=(async()=>{const res=await fetch("./archive/"+y+".json",{cache:"no-store"});if(!res.ok)throw new Error("No permanent archive for "+y);const data=await res.json();if(!data?.responses)throw new Error("Invalid season archive");return data})();staticArchiveCache.set(y,task);task.catch(()=>staticArchiveCache.delete(y));return task}
 function deriveArchivedJolpica(path,responses){
@@ -1531,11 +1536,11 @@ async function loadBriefingFeatures(force=false){
   ]);
   const sessionTask=(async()=>{
    try{
-    const all=await get("/sessions?year="+nowY);
+    const all=await briefingGet("/sessions?year="+nowY,10000);
     const now=Date.now(),races=all.filter(x=>x.session_key&&x.date_end&&new Date(x.date_end).getTime()<=now&&!x.is_cancelled&&/race/i.test(x.session_name||"")&&!/sprint/i.test(x.session_name||"")).sort((a,b)=>new Date(b.date_end)-new Date(a.date_end));
-    if(!races.length){spotlight.innerHTML='<p class="briefing-lead">No completed Grand Prix to analyse yet</p><p>Race Intel will break down position gains, fastest laps and tyre strategy after the first Grand Prix classification is available.</p>';return}
+    if(!races.length){spotlight.innerHTML='<p class="briefing-lead">No completed Grand Prix to analyse yet</p><p>Race Intel will break down position gains, fastest laps and tyre strategy after the first Grand Prix classification is available.</p>';spotlight.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,spotlight);return}
     const session=races[0],sk=encodeURIComponent(session.session_key);
-    const settled=await Promise.allSettled([get("/session_result?session_key="+sk),get("/drivers?session_key="+sk),get("/starting_grid?session_key="+sk),get("/laps?session_key="+sk),get("/stints?session_key="+sk),get("/pit?session_key="+sk)]);
+    const settled=await Promise.allSettled([briefingGet("/session_result?session_key="+sk,7000),briefingGet("/drivers?session_key="+sk,7000),briefingGet("/starting_grid?session_key="+sk,7000),briefingGet("/laps?session_key="+sk,7000),briefingGet("/stints?session_key="+sk,7000),briefingGet("/pit?session_key="+sk,7000)]);
     const data=settled.map(x=>x.status==="fulfilled"?x.value:[]);
     let [results,drivers,grid,laps,stints,pits]=data;
     results=results.slice().sort((a,b)=>(a.position??999)-(b.position??999));
