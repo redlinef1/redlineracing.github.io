@@ -894,8 +894,8 @@ async function fetchRetry(p){let lastError;for(let i=0;i<3;i++){await throttle()
 const ARCHIVE_DB="redline-archive-v1";
 let archiveDbPromise;
 function archiveDb(){if(!("indexedDB" in window))return Promise.reject(new Error("IndexedDB unavailable"));if(!archiveDbPromise)archiveDbPromise=new Promise((resolve,reject)=>{const req=indexedDB.open(ARCHIVE_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains("responses"))req.result.createObjectStore("responses")};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)});return archiveDbPromise}
-async function archiveRead(key){try{return await new Promise((resolve,reject)=>archiveDb().then(db=>{const tx=db.transaction("responses","readonly"),q=tx.objectStore("responses").get(key);q.onsuccess=()=>resolve(q.result?.data??null);q.onerror=()=>reject(q.error)}).catch(reject))}catch(e){return null}}
-async function archiveWrite(key,data){try{await new Promise((resolve,reject)=>archiveDb().then(db=>{const tx=db.transaction("responses","readwrite");tx.objectStore("responses").put({data,savedAt:Date.now()},key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)}).catch(reject))}catch(e){}}
+async function archiveRead(key){try{return await Promise.race([new Promise((resolve,reject)=>archiveDb().then(db=>{const tx=db.transaction("responses","readonly"),q=tx.objectStore("responses").get(key);q.onsuccess=()=>resolve(q.result?.data??null);q.onerror=()=>reject(q.error)}).catch(reject)),new Promise(resolve=>setTimeout(()=>resolve(null),2500))])}catch(e){return null}}
+async function archiveWrite(key,data){try{await Promise.race([new Promise((resolve,reject)=>archiveDb().then(db=>{const tx=db.transaction("responses","readwrite");tx.objectStore("responses").put({data,savedAt:Date.now()},key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)}).catch(reject)),new Promise(resolve=>setTimeout(resolve,2500))])}catch(e){}}
 const archiveStamp=()=>{try{return new Date().toLocaleString(undefined,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}catch(e){return "previously saved"}};
 function offlineArchiveNote(source){setNet("OFFLINE ARCHIVE · saved "+source+" data · "+archiveStamp())}
 // Preserve successful Home cards locally so temporary API failures do not erase useful data.
@@ -907,15 +907,15 @@ async function restoreHomeCard(key,element,label){
  const note=document.createElement("p");note.className="briefing-recap-foot";note.textContent="Showing saved "+label+" · last refreshed "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+".";
  element.appendChild(note);offlineArchiveNote("saved Home card");return true;
 }
-function get(p){if(cache.has(p))return cache.get(p);const q=chain.then(async()=>{try{const v=await fetchRetry(p);if(Array.isArray(v)&&v.length)await archiveWrite("openf1:"+p,v);return v}catch(e){const saved=await archiveRead("openf1:"+p);if(Array.isArray(saved)&&saved.length){offlineArchiveNote("OpenF1");return saved}throw e}});
-  chain=q.catch(()=>{}).then(()=>sleep(450));cache.set(p,q);q.then(v=>{if(Array.isArray(v)&&v.length===0&&cache.get(p)===q)cache.delete(p)}).catch(()=>{if(cache.get(p)===q)cache.delete(p)});return q}
+function get(p){if(cache.has(p))return cache.get(p);const queued=chain.then(async()=>{try{const v=await fetchRetry(p);if(Array.isArray(v)&&v.length)archiveWrite("openf1:"+p,v);return v}catch(e){const saved=await archiveRead("openf1:"+p);if(Array.isArray(saved)&&saved.length){offlineArchiveNote("OpenF1");return saved}throw e}});
+  chain=queued.catch(()=>{}).then(()=>sleep(250));let timer;const q=Promise.race([queued,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("OpenF1 request waited too long in the shared queue. Please refresh and retry.")),18000)})]).finally(()=>clearTimeout(timer));cache.set(p,q);q.then(v=>{if(Array.isArray(v)&&v.length===0&&cache.get(p)===q)cache.delete(p)}).catch(()=>{if(cache.get(p)===q)cache.delete(p)});return q}
 async function briefingGet(path,timeoutMs=8000){
  const saved=await archiveRead("openf1:"+path);
  if(Array.isArray(saved)&&saved.length){get(path).catch(()=>{});return saved}
  return await Promise.race([get(path),new Promise((_,reject)=>setTimeout(()=>reject(new Error("OpenF1 request timed out: "+path)),timeoutMs))]);
 }
 const jolpicaCache=new Map(),staticArchiveCache=new Map();
-async function readStaticSeasonArchive(y){if(staticArchiveCache.has(y))return staticArchiveCache.get(y);const task=(async()=>{const res=await fetch("./archive/"+y+".json",{cache:"no-store"});if(!res.ok)throw new Error("No permanent archive for "+y);const data=await res.json();if(!data?.responses)throw new Error("Invalid season archive");return data})();staticArchiveCache.set(y,task);task.catch(()=>staticArchiveCache.delete(y));return task}
+async function readStaticSeasonArchive(y){if(staticArchiveCache.has(y))return staticArchiveCache.get(y);const task=(async()=>{const res=await fetchTimed("./archive/"+y+".json",8000);if(!res.ok)throw new Error("No permanent archive for "+y);const data=await res.json();if(!data?.responses)throw new Error("Invalid season archive");return data})();staticArchiveCache.set(y,task);task.catch(()=>staticArchiveCache.delete(y));return task}
 function deriveArchivedJolpica(path,responses){
  if(responses[path])return responses[path];
  const m=path.match(/^\/(\d{4})\/(\d+)\/(results|qualifying|driverstandings|constructorstandings)\/$/);if(!m)return null;
@@ -1547,7 +1547,7 @@ async function archivedCircuitMeetings(y){
  // The Home circuit card needs only race dates and circuit metadata, not the full 600 KB season archive.
  // Use the compact schedule when available; retain the full archive as a compatibility fallback.
  try{
-  const response=await fetch("./archive/"+y+"-circuits.json",{cache:"force-cache"});
+  const response=await fetchTimed("./archive/"+y+"-circuits.json",8000);
   if(response.ok){const data=await response.json();if(Array.isArray(data.races))races=data.races}
  }catch(e){}
  if(!races.length){
