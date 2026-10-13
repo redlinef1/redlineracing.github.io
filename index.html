@@ -1064,7 +1064,21 @@ async function loadCountdownSchedule(y){
  if(countdownTimer)clearInterval(countdownTimer);countdownTimer=setInterval(renderCountdown,1000);
  // Refreshing the display does not re-fetch schedule data every 30 minutes; the local archive is the source of truth.
  if(countdownRefreshTimer)clearInterval(countdownRefreshTimer);
- countdownRefreshTimer=setInterval(()=>{renderLast();if(typeof renderBriefing==="function")renderBriefing()},30*60*1000);
+ countdownRefreshTimer=setInterval(()=>{
+  renderLast();
+  if(typeof renderBriefing==="function"){
+   renderBriefing();
+   // Recheck the circuit schedule and forecast periodically; failed refreshes keep the archive.
+   if(navigator.onLine){briefingFeaturesLoaded="";loadBriefingFeatures(true)}
+  }
+ },30*60*1000);
+ if(!window.redlineBriefingOnlineRefresh){
+  window.redlineBriefingOnlineRefresh=true;
+  window.addEventListener("online",()=>{
+   briefingFeaturesLoaded="";
+   if(typeof loadBriefingFeatures==="function")loadBriefingFeatures(true);
+  });
+ }
 }
 function countdownHTML(){
  const now=Date.now(),active=countdownSessions.find(x=>x.start<=now&&now<x.end),next=countdownSessions.find(x=>x.start>now),chosen=active||next;
@@ -1563,15 +1577,18 @@ async function loadWeekendForecast(meeting){
  if(!box||!meeting)return;
  const key=String(meeting.meeting_key||meeting.meeting_name||meeting.location||"");
  let savedWeather=null;
- if(briefingWeatherCache.has(key)){box.innerHTML=briefingWeatherCache.get(key);return}
- // Restore the last successful forecast immediately; refresh it in the background when online.
+ const cachedHtml=briefingWeatherCache.get(key);
+ if(cachedHtml)box.innerHTML=cachedHtml;
+ // Restore the last successful forecast first, then try a live refresh when connected.
  savedWeather=await archiveRead("weather:"+key);
  if(savedWeather?.html){
   box.innerHTML=savedWeather.html;
   const age=Math.max(1,Math.round((Date.now()-(savedWeather.savedAt||Date.now()))/60000));
   const note=document.createElement("p");note.className="briefing-weather-foot";note.textContent="Saved forecast · last checked "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+". Updating when connected.";
   box.appendChild(note);
- }else box.innerHTML='<div class="state">Finding the circuit forecast…</div>';
+ }else if(!cachedHtml)box.innerHTML='<div class="state">Finding the circuit forecast…</div>';
+ // Offline is a valid archive-viewing mode: don't waste time retrying unreachable providers.
+ if(!navigator.onLine){return}
  const weatherFailSafe=setTimeout(()=>{if(!savedWeather?.html&&!briefingWeatherCache.has(key)&&/Finding the circuit forecast|Loading weather/i.test(box.textContent))box.innerHTML='<p class="briefing-lead">Forecast is taking too long</p><p>Weather providers have not responded yet. The rest of Redline Grid remains available; try refreshing later.</p>';},15000);
  try{
   const countryName=String(meeting.country_name||"").trim();
@@ -1695,7 +1712,18 @@ async function loadBriefingFeatures(force=false){
   ]);
   const savedMeeting=await archiveRead("circuit-spotlight-meeting-"+nowY).catch(()=>null);
   const archive=await readStaticSeasonArchive(nowY).catch(()=>null),responses=archive?.responses||{};
-  const races=(responses["/"+nowY+"/races/"]?.RaceTable?.Races||[]).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+  // Prefer a fresh online schedule; the bundled archive and saved meeting remain fallbacks.
+  let liveRaces=null;
+  if(navigator.onLine){
+   try{
+    const liveResponse=await fetchTimed(JOLPICA+"/"+nowY+"/races/?limit=1000",8000);
+    if(liveResponse.ok){
+     const liveData=await liveResponse.json(),rows=liveData.MRData?.RaceTable?.Races||liveData.RaceTable?.Races;
+     if(Array.isArray(rows)&&rows.length)liveRaces=rows;
+    }
+   }catch(e){console.warn("Live circuit schedule unavailable; keeping saved schedule",e)}
+  }
+  const races=(liveRaces||responses["/"+nowY+"/races/"]?.RaceTable?.Races||[]).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
   const results=(responses["/"+nowY+"/results/"]?.RaceTable?.Races||[]).filter(r=>Array.isArray(r.Results)&&r.Results.length&&r.date&&new Date(r.date+"T23:59:59").getTime()<=Date.now()).sort((a,b)=>new Date(b.date)-new Date(a.date));
   const upcoming=races.find(r=>r.date&&new Date(r.date+"T23:59:59").getTime()>=Date.now());
   const spotlightMeeting=upcoming?{
@@ -1708,7 +1736,12 @@ async function loadBriefingFeatures(force=false){
   if(spotlightMeeting){
    // If the bundled schedule is unavailable, keep the restored self-contained map
    // instead of rebuilding it with a remote image URL while offline.
-   if(upcoming||briefing.dataset.loaded!=="true"){
+   const meetingChanged=!savedMeeting||String(savedMeeting.meeting_key||"")!==String(spotlightMeeting.meeting_key||"")||
+    String(savedMeeting.meeting_name||savedMeeting.raceName||"")!==String(spotlightMeeting.meeting_name||spotlightMeeting.raceName||"")||
+    String(savedMeeting.date_start||"")!==String(spotlightMeeting.date_start||"")||
+    String(savedMeeting.date_end||"")!==String(spotlightMeeting.date_end||"")||
+    JSON.stringify(savedMeeting.Circuit||{})!==JSON.stringify(spotlightMeeting.Circuit||{});
+   if(meetingChanged||!briefing.dataset.loaded){
     const title=spotlightMeeting.meeting_name||spotlightMeeting.raceName||"Grand Prix";
     const mapHtml=await circuitGuideHTMLOffline(spotlightMeeting);
     briefing.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>UP NEXT · ROUND '+esc(spotlightMeeting.jolpicaRound||"—")+'</span></div><p class="briefing-lead">'+esc(title)+'</p><p class="briefing-intel-sub">'+esc(spotlightMeeting.circuit_short_name||spotlightMeeting.Circuit?.circuitName||"Circuit details")+' · '+esc(spotlightMeeting.location||spotlightMeeting.Circuit?.Location?.locality||"")+(spotlightMeeting.country_name||spotlightMeeting.Circuit?.Location?.country?", "+esc(spotlightMeeting.country_name||spotlightMeeting.Circuit.Location.country):"")+'</p>'+mapHtml+'<p class="briefing-recap-foot">Circuit map and the last saved forecast remain available offline after a successful online visit.</p>';
