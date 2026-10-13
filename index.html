@@ -1723,7 +1723,10 @@ async function loadBriefingFeatures(force=false){
     }
    }catch(e){console.warn("Live circuit schedule unavailable; keeping saved schedule",e)}
   }
-  const races=(liveRaces||responses["/"+nowY+"/races/"]?.RaceTable?.Races||[]).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+  // Only let a verified live schedule replace the saved spotlight. If the live request fails,
+  // keep the last saved meeting instead of downgrading it to a possibly stale bundled archive.
+  const archivedRaces=!savedMeeting?(responses["/"+nowY+"/races/"]?.RaceTable?.Races||[]):[];
+  const races=(liveRaces||archivedRaces).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
   const results=(responses["/"+nowY+"/results/"]?.RaceTable?.Races||[]).filter(r=>Array.isArray(r.Results)&&r.Results.length&&r.date&&new Date(r.date+"T23:59:59").getTime()<=Date.now()).sort((a,b)=>new Date(b.date)-new Date(a.date));
   const upcoming=races.find(r=>r.date&&new Date(r.date+"T23:59:59").getTime()>=Date.now());
   const spotlightMeeting=upcoming?{
