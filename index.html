@@ -856,7 +856,7 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
   <div class="briefing-grid">
    <section class="briefing-card briefing-wide"><p class="briefing-kicker">THE SITUATION</p><h3>Live Session Status</h3><div id="briefingSummary" class="briefing-content"><div class="state">Checking the schedule…</div></div></section>
    <section class="briefing-card briefing-wide briefing-priority"><p class="briefing-kicker">RACE REPORT</p><h3>Latest Race Recap</h3><div id="briefingRecap" class="briefing-content"><div class="state">Loading the latest verified race result…</div></div></section>
-    <section class="briefing-card"><p class="briefing-kicker">NEXT UP · RACE WEEKEND</p><h3>Race Weekend Briefing</h3><div id="briefingSpotlight" class="briefing-content"><div class="state">Building the next race weekend…</div></div></section>
+    <section class="briefing-card"><p class="briefing-kicker">CIRCUIT SPOTLIGHT</p><h3>Know the track</h3><div id="briefingSpotlight" class="briefing-content"><div class="state">Restoring the saved circuit spotlight…</div></div><div id="briefingWeather" class="briefing-content briefing-weather-inline"><div class="state">Restoring saved circuit weather…</div></div></section>
     <section class="briefing-card"><p class="briefing-kicker">THE BIG PICTURE</p><h3>Season Storylines</h3><div id="briefingCircuit" class="briefing-content"><div class="state">Reading the championship picture…</div></div></section>
     <section class="briefing-card"><p class="briefing-kicker">BEYOND THE GRID</p><h3>F1 Fact File</h3><div id="briefingFacts" class="briefing-content"><div class="state">Loading a little F1 history…</div></div></section>
   </div>
@@ -1689,27 +1689,35 @@ async function loadBriefingFeatures(force=false){
  try{
   // Restore the last successful Home cards first; refresh the season archive afterwards.
   await Promise.all([
-   restoreHomeCard("race-intel-"+nowY,briefing,"race-weekend briefing"),
+   restoreHomeCard("race-intel-v2-"+nowY,briefing,"circuit spotlight"),
    restoreHomeCard("circuit-"+nowY,storylines,"season storylines"),
    restoreHomeCard("fact-file-"+nowY,facts,"F1 fact file")
   ]);
+  const savedMeeting=await archiveRead("circuit-spotlight-meeting-"+nowY).catch(()=>null);
   const archive=await readStaticSeasonArchive(nowY).catch(()=>null),responses=archive?.responses||{};
   const races=(responses["/"+nowY+"/races/"]?.RaceTable?.Races||[]).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
   const results=(responses["/"+nowY+"/results/"]?.RaceTable?.Races||[]).filter(r=>Array.isArray(r.Results)&&r.Results.length&&r.date&&new Date(r.date+"T23:59:59").getTime()<=Date.now()).sort((a,b)=>new Date(b.date)-new Date(a.date));
   const upcoming=races.find(r=>r.date&&new Date(r.date+"T23:59:59").getTime()>=Date.now());
-  if(upcoming){
-   const sessions=jolpicaSessionList(upcoming).filter(x=>x.date).sort((a,b)=>a.date-b.date),now=Date.now(),next=sessions.find(x=>x.date.getTime()>=now);
-   const sessionRows=sessions.map(s=>{
-    const stamp=s.date.getTime(),status=stamp<now?"START TIME PASSED":s===next?"NEXT UP":"SCHEDULED";
-    const when=s.date.toLocaleString(undefined,{weekday:"short",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
-    return '<div class="briefing-session"><div class="briefing-session-main"><b>'+esc(s.name)+'</b><small>'+esc(when)+'</small></div><span class="briefing-tag'+(s===next?' live':'')+'">'+esc(status)+'</span></div>';
-   }).join("");
-   const raceDate=new Date(upcoming.date+"T12:00:00Z").toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"long"});
-   briefing.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>ROUND '+esc(upcoming.round||"—")+' · WEEKEND SCHEDULE</span></div><p class="briefing-lead">'+esc(upcoming.raceName||"Next Grand Prix")+'</p><p class="briefing-intel-sub">'+esc(upcoming.Circuit?.circuitName||"Circuit details")+' · '+esc(upcoming.Circuit?.Location?.locality||"")+(upcoming.Circuit?.Location?.country?", "+esc(upcoming.Circuit.Location.country):"")+'</p>'+(sessionRows?'<div class="briefing-weekend-schedule">'+sessionRows+'</div>':'<p>Session times are not available in the current schedule archive.</p>')+'<p class="briefing-recap-foot">Race date: '+esc(raceDate)+'. Session times use your device timezone. “Start time passed” does not confirm a session has finished.</p><button type="button" class="briefing-result-link" data-hub-tab="cal">View full session calendar →</button>';
+  const spotlightMeeting=upcoming?{
+   _source:"archive",season:nowY,jolpicaRound:Number(upcoming.round),meeting_key:"jolpica-"+nowY+"-"+Number(upcoming.round),
+   date_start:(jolpicaSessionList(upcoming).filter(x=>x.date).sort((a,b)=>a.date-b.date)[0]?.date||new Date(upcoming.date+"T12:00:00Z")).toISOString(),
+   date_end:new Date(upcoming.date+"T12:00:00Z").toISOString(),location:upcoming.Circuit?.Location?.locality||upcoming.Circuit?.circuitName||"",
+   country_name:upcoming.Circuit?.Location?.country||"",circuit_short_name:upcoming.Circuit?.circuitName||"",
+   meeting_name:upcoming.raceName||"Grand Prix",raceName:upcoming.raceName||"Grand Prix",Circuit:upcoming.Circuit,jolpicaRace:upcoming
+  }:savedMeeting;
+  if(spotlightMeeting){
+   const title=spotlightMeeting.meeting_name||spotlightMeeting.raceName||"Grand Prix";
+   const mapHtml=await circuitGuideHTMLOffline(spotlightMeeting);
+   briefing.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>UP NEXT · ROUND '+esc(spotlightMeeting.jolpicaRound||"—")+'</span></div><p class="briefing-lead">'+esc(title)+'</p><p class="briefing-intel-sub">'+esc(spotlightMeeting.circuit_short_name||spotlightMeeting.Circuit?.circuitName||"Circuit details")+' · '+esc(spotlightMeeting.location||spotlightMeeting.Circuit?.Location?.locality||"")+(spotlightMeeting.country_name||spotlightMeeting.Circuit?.Location?.country?", "+esc(spotlightMeeting.country_name||spotlightMeeting.Circuit.Location.country):"")+'</p>'+mapHtml+'<p class="briefing-recap-foot">Circuit map and the last saved forecast remain available offline after a successful online visit.</p>';
+   briefing.dataset.loaded="true";
+   await archiveWrite("circuit-spotlight-meeting-"+nowY,spotlightMeeting);
+   await saveHomeCard("race-intel-v2-"+nowY,briefing);
+   // Forecast restoration is independent from the season archive, so it still works offline.
+   loadWeekendForecast(spotlightMeeting);
   }else{
-   const last=results[0];briefing.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>SEASON CHECK-IN</span></div><p class="briefing-lead">'+(last?esc(last.raceName||"Latest Grand Prix"):"No upcoming round listed")+'</p><p>'+(last?"The latest completed round is archived. The next scheduled Grand Prix has not been added yet.":"The bundled calendar does not list another race yet.")+'</p><button type="button" class="briefing-result-link" data-hub-tab="cal">Open race calendar →</button>';
+   briefing.innerHTML='<p class="briefing-lead">Circuit spotlight not cached yet</p><p>Connect once to load and save the next circuit map and weather forecast for offline viewing.</p>';
   }
-  briefing.dataset.loaded="true";await saveHomeCard("race-intel-"+nowY,briefing);
+
   const standings=responses["/"+nowY+"/driverstandings/"]?.StandingsTable?.StandingsLists?.[0]?.DriverStandings||[];
   const recent=results.slice(0,3),driverName=v=>[v.Driver?.givenName,v.Driver?.familyName].filter(Boolean).join(" ")||v.Driver?.driverId||"Driver";
   if(standings.length){
@@ -2093,6 +2101,22 @@ function circuitGuideHTML(x){
   <div class="circuit-sectors">${sectorDetails}</div>
   <div class="circuit-guide-links"><a href="${mapLink}" target="_blank" rel="noopener">Circuit map data ↗</a><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap contributors ↗</a><a href="https://github.com/f1db/f1-circuits-svg" target="_blank" rel="noopener">Fallback outline source ↗</a></div>
  </section>`;
+}
+async function circuitGuideHTMLOffline(meeting){
+ let html=circuitGuideHTML(meeting);
+ // Store the track SVG inline with the cached card; a remote image URL alone is not reliable offline.
+ const match=html.match(/<img src="([^"]+)" alt="([^"]*)" loading="lazy" onerror="([^"]*)">/);
+ if(!match)return html;
+ const candidates=[match[1],match[1].replace("/detailed/white-outline/","/minimal/white-outline/")];
+ for(const url of [...new Set(candidates)]){
+  try{
+   const response=await fetchTimed(url,6000);if(!response.ok)continue;
+   const svg=await response.text();if(!/<svg[\\s>]/i.test(svg))continue;
+   const dataUrl="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+   return html.replace(match[0],'<img src="'+dataUrl+'" alt="'+match[2]+'" loading="lazy">');
+  }catch(e){}
+ }
+ return html;
 }
 $("calList").onclick=async e=>{
  const h=e.target.closest(".mth");if(!h)return;const box=h.parentNode,det=box.querySelector(".mtd"),x=calMap[box.dataset.k],open=det.hidden;det.hidden=!open;h.setAttribute("aria-expanded",open);if(!open||det.dataset.done)return;
