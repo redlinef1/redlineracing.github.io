@@ -1706,12 +1706,16 @@ async function loadBriefingFeatures(force=false){
    meeting_name:upcoming.raceName||"Grand Prix",raceName:upcoming.raceName||"Grand Prix",Circuit:upcoming.Circuit,jolpicaRace:upcoming
   }:savedMeeting;
   if(spotlightMeeting){
-   const title=spotlightMeeting.meeting_name||spotlightMeeting.raceName||"Grand Prix";
-   const mapHtml=await circuitGuideHTMLOffline(spotlightMeeting);
-   briefing.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>UP NEXT · ROUND '+esc(spotlightMeeting.jolpicaRound||"—")+'</span></div><p class="briefing-lead">'+esc(title)+'</p><p class="briefing-intel-sub">'+esc(spotlightMeeting.circuit_short_name||spotlightMeeting.Circuit?.circuitName||"Circuit details")+' · '+esc(spotlightMeeting.location||spotlightMeeting.Circuit?.Location?.locality||"")+(spotlightMeeting.country_name||spotlightMeeting.Circuit?.Location?.country?", "+esc(spotlightMeeting.country_name||spotlightMeeting.Circuit.Location.country):"")+'</p>'+mapHtml+'<p class="briefing-recap-foot">Circuit map and the last saved forecast remain available offline after a successful online visit.</p>';
-   briefing.dataset.loaded="true";
-   await archiveWrite("circuit-spotlight-meeting-"+nowY,spotlightMeeting);
-   await saveHomeCard("race-intel-v2-"+nowY,briefing);
+   // If the bundled schedule is unavailable, keep the restored self-contained map
+   // instead of rebuilding it with a remote image URL while offline.
+   if(upcoming||briefing.dataset.loaded!=="true"){
+    const title=spotlightMeeting.meeting_name||spotlightMeeting.raceName||"Grand Prix";
+    const mapHtml=await circuitGuideHTMLOffline(spotlightMeeting);
+    briefing.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>UP NEXT · ROUND '+esc(spotlightMeeting.jolpicaRound||"—")+'</span></div><p class="briefing-lead">'+esc(title)+'</p><p class="briefing-intel-sub">'+esc(spotlightMeeting.circuit_short_name||spotlightMeeting.Circuit?.circuitName||"Circuit details")+' · '+esc(spotlightMeeting.location||spotlightMeeting.Circuit?.Location?.locality||"")+(spotlightMeeting.country_name||spotlightMeeting.Circuit?.Location?.country?", "+esc(spotlightMeeting.country_name||spotlightMeeting.Circuit.Location.country):"")+'</p>'+mapHtml+'<p class="briefing-recap-foot">Circuit map and the last saved forecast remain available offline after a successful online visit.</p>';
+    briefing.dataset.loaded="true";
+    await archiveWrite("circuit-spotlight-meeting-"+nowY,spotlightMeeting);
+    await saveHomeCard("race-intel-v2-"+nowY,briefing);
+   }
    // Forecast restoration is independent from the season archive, so it still works offline.
    loadWeekendForecast(spotlightMeeting);
   }else{
@@ -2111,7 +2115,7 @@ async function circuitGuideHTMLOffline(meeting){
  for(const url of [...new Set(candidates)]){
   try{
    const response=await fetchTimed(url,6000);if(!response.ok)continue;
-   const svg=await response.text();if(!/<svg[\\s>]/i.test(svg))continue;
+   const svg=await response.text();if(!/<svg[\s>]/i.test(svg))continue;
    const dataUrl="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
    return html.replace(match[0],'<img src="'+dataUrl+'" alt="'+match[2]+'" loading="lazy">');
   }catch(e){}
