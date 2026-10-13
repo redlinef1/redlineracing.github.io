@@ -1062,21 +1062,28 @@ async function loadCountdownSchedule(y){
  countdownSessions=items.filter(Boolean).sort((a,b)=>a.start-b.start);
  renderLast();if(typeof renderBriefing==="function")renderBriefing();
  if(countdownTimer)clearInterval(countdownTimer);countdownTimer=setInterval(renderCountdown,1000);
- // Refreshing the display does not re-fetch schedule data every 30 minutes; the local archive is the source of truth.
+ // Keep the saved spotlight/weather as the fallback; refresh in the background when connected.
+ // Check every 30 minutes and when the user returns to the tab, without hammering providers.
  if(countdownRefreshTimer)clearInterval(countdownRefreshTimer);
+ const refreshCircuitHome=()=>{
+  if(!navigator.onLine||typeof loadBriefingFeatures!=="function")return;
+  const now=Date.now();
+  if(now-(window.redlineBriefingLastRefresh||0)<2*60*1000)return;
+  window.redlineBriefingLastRefresh=now;
+  briefingFeaturesLoaded="";
+  loadBriefingFeatures(true);
+ };
  countdownRefreshTimer=setInterval(()=>{
   renderLast();
-  if(typeof renderBriefing==="function"){
-   renderBriefing();
-   // Recheck the circuit schedule and forecast periodically; failed refreshes keep the archive.
-   if(navigator.onLine){briefingFeaturesLoaded="";loadBriefingFeatures(true)}
-  }
+  if(typeof renderBriefing==="function")renderBriefing();
+  refreshCircuitHome();
  },30*60*1000);
  if(!window.redlineBriefingOnlineRefresh){
   window.redlineBriefingOnlineRefresh=true;
-  window.addEventListener("online",()=>{
-   briefingFeaturesLoaded="";
-   if(typeof loadBriefingFeatures==="function")loadBriefingFeatures(true);
+  window.addEventListener("online",refreshCircuitHome);
+  window.addEventListener("focus",refreshCircuitHome);
+  document.addEventListener("visibilitychange",()=>{
+   if(document.visibilityState==="visible")refreshCircuitHome();
   });
  }
 }
