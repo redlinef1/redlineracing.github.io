@@ -920,10 +920,12 @@ function offlineArchiveNote(source){setNet("OFFLINE ARCHIVE · saved "+source+" 
 async function saveHomeCard(key,element){if(element?.innerHTML&&element.dataset.loaded==="true")await archiveWrite("home-card:"+key,{html:element.innerHTML,savedAt:Date.now()})}
 async function restoreHomeCard(key,element,label){
  if(!element)return false;const saved=await archiveRead("home-card:"+key);if(!saved?.html)return false;
- element.innerHTML=saved.html;element.dataset.loaded="true";
+ element.innerHTML=saved.html;element.dataset.loaded="saved";
  const age=Math.max(1,Math.round((Date.now()-(saved.savedAt||Date.now()))/60000));
- const note=document.createElement("p");note.className="briefing-recap-foot";note.textContent="Showing saved "+label+" · last refreshed "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+".";
- element.appendChild(note);offlineArchiveNote("saved Home card");return true;
+ const note=document.createElement("p");note.className="briefing-recap-foot";note.dataset.archiveNote="true";note.textContent="Saved "+label+" · refreshed "+(age<60?age+" min ago":Math.round(age/60)+" hr ago")+". Updating when a connection is available.";
+ element.appendChild(note);
+ element.querySelectorAll("[data-hub-tab]").forEach(b=>b.onclick=()=>show(b.dataset.hubTab));
+ offlineArchiveNote("saved Home card");return true;
 }
 function get(p){if(cache.has(p))return cache.get(p);const queued=chain.then(async()=>{try{const v=await fetchRetry(p);if(Array.isArray(v)&&v.length)archiveWrite("openf1:"+p,v);return v}catch(e){const saved=await archiveRead("openf1:"+p);if(Array.isArray(saved)&&saved.length){offlineArchiveNote("OpenF1");return saved}throw e}});
   chain=queued.catch(()=>{}).then(()=>sleep(250));let timer;const q=Promise.race([queued,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("OpenF1 request waited too long in the shared queue. Please refresh and retry.")),18000)})]).finally(()=>clearTimeout(timer));cache.set(p,q);q.then(v=>{if(Array.isArray(v)&&v.length===0&&cache.get(p)===q)cache.delete(p)}).catch(()=>{if(cache.get(p)===q)cache.delete(p)});return q}
@@ -1685,6 +1687,12 @@ async function loadBriefingFeatures(force=false){
  if(!force&&briefingFeaturesLoaded===key&&briefing.dataset.loaded==="true")return;
  briefingFeaturesBusy=true;
  try{
+  // Restore the last successful Home cards first; refresh the season archive afterwards.
+  await Promise.all([
+   restoreHomeCard("race-intel-"+nowY,briefing,"race-weekend briefing"),
+   restoreHomeCard("circuit-"+nowY,storylines,"season storylines"),
+   restoreHomeCard("fact-file-"+nowY,facts,"F1 fact file")
+  ]);
   const archive=await readStaticSeasonArchive(nowY).catch(()=>null),responses=archive?.responses||{};
   const races=(responses["/"+nowY+"/races/"]?.RaceTable?.Races||[]).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
   const results=(responses["/"+nowY+"/results/"]?.RaceTable?.Races||[]).filter(r=>Array.isArray(r.Results)&&r.Results.length&&r.date&&new Date(r.date+"T23:59:59").getTime()<=Date.now()).sort((a,b)=>new Date(b.date)-new Date(a.date));
@@ -1713,7 +1721,7 @@ async function loadBriefingFeatures(force=false){
    ["FERRARI’S F1 DEBUT","Monaco, 1950","Scuderia Ferrari made its Formula 1 World Championship debut at the Monaco Grand Prix in May 1950.","https://www.ferrari.com/en-GW/history/moments/1950/debut-in-f1/more","Read Ferrari’s official history ↗"]
   ];
   const fact=list[(new Date().getUTCDate()+new Date().getUTCMonth())%list.length];
-  facts.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>F1 HISTORY · DAILY PICK</span></div><p class="briefing-verdict-kicker">'+esc(fact[0])+'</p><p class="briefing-lead">'+esc(fact[1])+'</p><p class="briefing-intel-sub">'+esc(fact[2])+'</p><p class="briefing-recap-foot">Fact source: '+esc(fact[4].replace(/ ↗$/,""))+'.</p><a class="briefing-result-link" href="'+fact[3]+'" target="_blank" rel="noopener noreferrer">'+esc(fact[4])+'</a>';facts.dataset.loaded="true";
+  facts.innerHTML='<div class="briefing-statusline"><span class="briefing-live-dot upcoming"></span><span>F1 HISTORY · DAILY PICK</span></div><p class="briefing-verdict-kicker">'+esc(fact[0])+'</p><p class="briefing-lead">'+esc(fact[1])+'</p><p class="briefing-intel-sub">'+esc(fact[2])+'</p><p class="briefing-recap-foot">Fact source: '+esc(fact[4].replace(/ ↗$/,""))+'.</p><a class="briefing-result-link" href="'+fact[3]+'" target="_blank" rel="noopener noreferrer">'+esc(fact[4])+'</a>';facts.dataset.loaded="true";await saveHomeCard("fact-file-"+nowY,facts);
   document.querySelectorAll("[data-hub-tab]").forEach(b=>b.onclick=()=>show(b.dataset.hubTab));briefingFeaturesLoaded=key;
  }catch(e){
   console.warn("Home features archive unavailable",e);
@@ -1738,7 +1746,8 @@ async function loadBriefingRecap(force=false){
  const y=nowY;
  if(!force&&briefingRecapKey===String(y)&&box.dataset.loaded==="true")return;
  briefingRecapBusy=true;briefingRecapKey=String(y);
- box.innerHTML='<div class="state">Checking the latest completed Grand Prix…</div>';
+ const restored=await restoreHomeCard("race-recap-"+y,box,"race recap");
+ if(!restored)box.innerHTML='<div class="state">Checking the latest completed Grand Prix…</div>';
  try{
   // Prefer OpenF1's current-season race sessions and classification. Jolpica-F1
   // can lag behind current results, so it is a fallback rather than the first source.
@@ -1760,7 +1769,7 @@ async function loadBriefingRecap(force=false){
     const podiumLine=podium.map((v,i)=>'<div class="briefing-podium-row"><span class="briefing-podium-pos">'+esc(v.position||i+1)+'</span><span class="briefing-podium-name">'+esc(name(v))+'<small>'+esc(v.Constructor?.name||"")+'</small></span><b>'+esc(v.Time?.time||v.status||"—")+'</b></div>').join("");
     const date=jdate({date:race.date})||new Date(race.date+"T12:00:00Z"),gp=race.raceName||scheduledRace?.raceName||"Grand Prix";
     briefingRecapBaseHtml='<div class="briefing-recap-top"><div><div class="briefing-statusline"><span class="briefing-live-dot"></span><span>ARCHIVED RESULT</span></div><p class="briefing-lead">'+esc(gp)+'</p><p>'+date.toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})+' · Winner: <strong>'+esc(name(winner))+'</strong>'+(winner.Constructor?.name?" · "+esc(winner.Constructor.name):"")+'</p></div><span class="briefing-recap-points">'+(winner.points?esc(winner.points)+" pts":"")+'</span></div><div class="briefing-verdict"><p class="briefing-verdict-kicker">THE VERDICT</p><p class="briefing-recap-summary">'+esc(name(winner))+' takes the win in the '+esc(gp)+'. This snapshot comes from the bundled season archive; check official results for any later corrections.</p></div><p class="briefing-podium-label">PODIUM</p><div class="briefing-podium">'+podiumLine+'</div><p class="briefing-recap-foot">Bundled season archive · no live API required for this result.</p><a class="briefing-result-link" href="https://www.formula1.com/en/results/'+y+'/races" target="_blank" rel="noopener noreferrer">View official F1 results ↗</a>';
-    box.dataset.loaded="true";renderBriefingRecapSessionStatus();return;
+    box.dataset.loaded="true";renderBriefingRecapSessionStatus();saveHomeCard("race-recap-"+y,box);return;
    }
   }catch(archiveError){console.warn("Local race recap archive unavailable; trying live sources",archiveError)}
   try{
