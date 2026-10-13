@@ -6,7 +6,7 @@
 
 An independent motorsport dashboard for race schedules, results, driver statistics and the details behind every lap.
 
-[**Open Redline →**](https://redlinef1.github.io/)
+[**Open Redline →**](https://redlinegrid.github.io/)
 
 *Explore the numbers. Follow the story. Understand every lap.*
 
