@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏁 REDLINE
+# 🏁 REDLINE GRID
 
 ### Motorsport Data. One Independent Dashboard.
 
