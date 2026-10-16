@@ -1160,7 +1160,7 @@ function show(top,sub){
  ensure();
 }
 document.querySelectorAll("#tabs button[data-v]").forEach(b=>b.onclick=()=>show(b.dataset.v));
-show("home","news");
+// Initial tab activation runs after all state variables are initialized.
 
 // Mobile navigation and championship/result browsing enhancements.
 document.querySelectorAll("[data-standing-kind]").forEach(btn=>btn.addEventListener("click",()=>{
@@ -2772,6 +2772,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 }
 
 // Prioritise Home's schedule and race summary requests before initialising the heavier season-data panels.
+show("home","news");
 renderBriefing();
 setTimeout(()=>loadYear(nowY),1200);
 // Keep the recap's live-session notice in sync with session start/end times.
