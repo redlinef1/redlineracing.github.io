@@ -896,6 +896,42 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
  .result-tools input{flex-basis:100%;width:100%}
 }
 @media(min-width:821px){.more-nav-menu{display:none!important}}
+
+/* Final mobile nav override: fixed four-item dock; More has its own handler. */
+@media(max-width:820px){
+ #tabs{
+  position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;
+  z-index:60!important;display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  align-items:stretch!important;justify-content:stretch!important;gap:4px!important;
+  width:100%!important;box-sizing:border-box!important;margin:0!important;
+  padding:7px 8px calc(7px + env(safe-area-inset-bottom))!important;
+  border:0!important;border-top:1px solid var(--line)!important;border-radius:16px 16px 0 0!important;
+  background:var(--navbg,var(--card))!important;backdrop-filter:blur(16px);
+  overflow:visible!important;box-shadow:0 -5px 22px rgba(0,0,0,.12)!important;
+ }
+ #tabs button,#tabs button[data-v="stats"],#tabs button[data-v="standings"]{
+  display:none!important;min-width:0!important;width:100%!important;max-width:100%!important;
+  flex:initial!important;box-sizing:border-box!important;margin:0!important;
+  padding:7px 2px 5px!important;min-height:50px!important;
+  flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  gap:3px!important;white-space:normal!important;overflow-wrap:anywhere!important;
+  border:0!important;border-radius:10px!important;font-size:10px!important;line-height:1.15!important;
+  letter-spacing:0!important;text-transform:none!important;
+ }
+ #tabs button[data-v="news"],#tabs button[data-v="standings"],#tabs button[data-v="race"],#tabs #moreNavBtn{
+  display:flex!important;
+ }
+ #tabs button[data-v="news"]::before{content:"⌂"!important;display:block!important;font-size:17px!important;line-height:1!important}
+ #tabs button[data-v="standings"]::before{content:"▤"!important;display:block!important;font-size:16px!important;line-height:1!important}
+ #tabs button[data-v="race"]::before{content:"◉"!important;display:block!important;font-size:16px!important;line-height:1!important}
+ #tabs #moreNavBtn{gap:3px!important;color:var(--mute)!important;background:transparent!important}
+ #tabs #moreNavBtn::before{content:"•••";display:block;font-size:17px;letter-spacing:1px;line-height:1}
+ #tabs button[aria-selected="true"]{background:var(--soft)!important;color:var(--txt)!important}
+ #tabs button[aria-selected="true"]::before{color:var(--red)!important}
+ #tabs #moreNavBtn[aria-expanded="true"]{background:var(--soft)!important;color:var(--txt)!important}
+ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))!important}
+ .more-nav-menu{position:fixed!important;z-index:80!important;right:10px!important;bottom:calc(72px + env(safe-area-inset-bottom))!important;top:auto!important;width:min(280px,calc(100vw - 20px))!important;max-height:calc(100dvh - 110px)!important;overflow:auto!important;background:var(--card)!important;border:1px solid var(--line)!important}
+}
 </style>
 </head>
 <body>
@@ -1123,7 +1159,7 @@ function show(top,sub){
   }
  ensure();
 }
-document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+document.querySelectorAll("#tabs button[data-v]").forEach(b=>b.onclick=()=>show(b.dataset.v));
 
 // Mobile navigation and championship/result browsing enhancements.
 const moreNavBtn=$("moreNavBtn"),moreNavMenu=$("moreNavMenu");
