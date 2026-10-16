@@ -897,6 +897,88 @@ main,.layout>*{min-width:0}.panel{min-width:0;max-width:100%}
 }
 @media(min-width:821px){.more-nav-menu{display:none!important}}
 
+/* Drivers hub: give the heading and view selector a cleaner, unified layout. */
+#v-stats .stats-head{
+ align-items:center;
+ gap:18px;
+ padding:22px 20px 16px;
+}
+#v-stats .stats-kicker{
+ margin:0 0 7px;
+ font-size:10px;
+ line-height:1.4;
+ letter-spacing:.15em;
+}
+#v-stats .stats-head h2{
+ font-size:clamp(27px,3.6vw,32px)!important;
+ line-height:1.08!important;
+ letter-spacing:-.035em!important;
+}
+#v-stats .stats-intro{
+ max-width:520px;
+ margin-top:8px;
+ font-size:13px;
+ line-height:1.55;
+}
+#v-stats .stats-season{
+ flex:0 0 auto;
+ gap:10px;
+ padding:8px 10px;
+ border:1px solid var(--line);
+ border-radius:10px;
+ background:var(--soft);
+}
+#v-stats .stats-season select{
+ min-width:92px;
+ border-radius:7px;
+}
+#v-stats .stats-subnav{
+ display:flex;
+ flex-wrap:wrap;
+ gap:8px;
+ padding:0 20px 18px;
+ overflow:visible;
+}
+#v-stats .stats-subnav button{
+ flex:1 1 calc(20% - 8px);
+ min-width:0;
+ min-height:40px;
+ padding:9px 10px;
+ text-align:center;
+ white-space:normal;
+ line-height:1.25;
+ border-radius:9px;
+}
+@media(max-width:600px){
+ #v-stats .stats-head{
+  align-items:stretch;
+  gap:14px;
+  padding:19px 14px 14px;
+ }
+ #v-stats .stats-head h2{font-size:29px!important}
+ #v-stats .stats-intro{font-size:12px;line-height:1.5}
+ #v-stats .stats-season{
+  width:100%;
+  justify-content:space-between;
+  padding:7px 9px;
+ }
+ #v-stats .stats-season select{flex:0 1 140px;min-width:0}
+ #v-stats .stats-subnav{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;
+  padding:0 12px 14px;
+  overflow:visible;
+ }
+ #v-stats .stats-subnav button{
+  width:100%;
+  min-width:0;
+  min-height:42px;
+  padding:9px 6px;
+  font-size:12px;
+  overflow-wrap:anywhere;
+ }
+}
 /* Keep the Home / Race Centre title typography consistent with the other section headers. */
 #v-news .briefing-head h2{
  font-family:Inter, sans-serif!important;
