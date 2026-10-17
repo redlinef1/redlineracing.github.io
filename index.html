@@ -1406,6 +1406,9 @@ function show(top,sub){
  ensure();
 }
 document.querySelectorAll("#tabs button[data-v]").forEach(b=>b.onclick=()=>show(b.dataset.v));
+const heroRaceLink=$("heroRaceLink"),heroDataLink=$("heroDataLink");
+if(heroRaceLink)heroRaceLink.addEventListener("click",()=>show("race","result"));
+if(heroDataLink)heroDataLink.addEventListener("click",()=>show("data","live"));
 // Initial tab activation runs after all state variables are initialized.
 
 // Mobile navigation and championship/result browsing enhancements.
